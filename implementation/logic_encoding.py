@@ -190,8 +190,74 @@ def encode_evolution(m: MRA, t: int) -> And:
 
 # By Definition 13 in Paper
 def encode_r_evolution(r: int, m: MRA, t: int) -> Or:
+    to_or = []
+    for a in m.agt:
+        if r in a.acc:
+            to_or.append((
+                (And(
+                    encode_resource_state(r, a.id, t + 1, m.num_agents()),
+                    encode_action(f"req{r}", a, t),
+                    h_encode_other_agents_not_requesting_r(m.agt, a, r, t)
+                ))
+            ))
+            to_or.append(
+                (And(
+                    encode_resource_state(r, a.id, t + 1, m.num_agents()),
+                    encode_resource_state(r, a.id, t, m.num_agents()),
+                    Not(encode_action(f"req{r}", a, t)),
+                    Not(encode_action("relall", a, t))
+                ))
+            )
+            to_or.append(
+                (And(
+                    encode_resource_state(r, 0, t + 1, m.num_agents()),
+                    encode_action(f"rel{r}", a, t)
+                ))
+            )
+            to_or.append(
+                (And(
+                    encode_resource_state(r, 0, t + 1, m.num_agents()),
+                    encode_resource_state(r, a.id, t, m.num_agents()),
+                    encode_action("relall", a, 0)
+                ))
+            )
+    to_or.append(
+        (And(
+            encode_resource_state(r, 0, t + 1, m.num_agents()),
+            encode_resource_state(r, 0, t, m.num_agents()),
+            h_encode_no_agents_requesting_r(m.agt, r, t)
+        ))
+    )
+    to_or.append(
+        (And(
+            encode_resource_state(r, 0, t + 1, m.num_agents()),
+            encode_resource_state(r, 0, t, m.num_agents()),
+            encode_some_two_agents_requesting_r(m.agt, r, t)
+        ))
+    )
+    return Or(to_or)
 
-    return Or()
+
+# TODO: Ask Nils if my modification ok (skipping agents that do not have acc to resource)??
+def h_encode_other_agents_not_requesting_r(agents: list[Agent], agent: Agent, r: int, t: int) -> And:
+    to_conjunct = []
+    for a in agents:
+        if a.id != agent.id and r in a.acc:
+            to_conjunct.append(Not(encode_action(f"req{r}", a, t)))
+    return And(to_conjunct)
+
+
+def h_encode_no_agents_requesting_r(agents: list[Agent], r: int, t: int) -> And:
+    to_conjunct = []
+    for a in agents:
+        if r in a.acc:
+            to_conjunct.append(Not(encode_action(f"req{r}", a, t)))
+    return And(to_conjunct)
+
+
+def encode_some_two_agents_requesting_r(agents: list[Agent], r: int, t: int) -> Or:
+    to_or = []
+    return Or(to_or)
 
 
 # By Definition 14 in Paper
