@@ -333,7 +333,7 @@ def encode_goal(agent: Agent, time: int, total_num_agents: int) -> Or:
 def encode_action(action: str, agent: Agent, time: int) -> And:
     return binary_encode(
         to_binary_string(action_number(action), len(agent.acc)),
-        f"act_{action}_a{agent}t{time}"
+        f"act_{action}_a{agent.id}t{time}"
     )
 
 
