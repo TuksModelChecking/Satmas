@@ -1,4 +1,5 @@
 import math
+import time
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -27,8 +28,8 @@ class MRA:
     res: list[int]
     coalition: list[int]
 
-    def num_agents(self):
-        return len(self.agt)
+    def num_agents_plus(self):
+        return len(self.agt) + 1
 
     def num_resources(self):
         return len(self.res)
@@ -108,19 +109,17 @@ def symbol_cnf_to_int_cnf(symbol_cnf: Tuple, store: IDStore):
 
 def encode_problem(p: Problem) -> And:
     return And(
-        encode_goal_reachability_formula(p.mra.agt, p.mra.num_agents(), p.k),
+        encode_goal_reachability_formula(p.mra.agt, p.mra.num_agents_plus(), p.k),
         encode_m_k(p.mra, p.k),
-        encode_protocol(p.mra.agt, p.mra.num_agents(), p.k)
+        encode_protocol(p.mra.agt, p.mra.num_agents_plus(), p.k)
     )
 
 
 # also conjunct with def 14 function
 def encode_m_k(m: MRA, k: int) -> And:
-    to_conjunct = [encode_initial_state(m.num_resources(), m.num_agents())]
+    to_conjunct = [encode_initial_state(m.num_resources(), m.num_agents_plus())]
     for t in range(0, k):
         to_conjunct.append((encode_evolution(m, t)))
-    print("test")
-    print(And(*to_conjunct))
     return And(*to_conjunct)
 
 
@@ -316,50 +315,49 @@ def encode_r_evolution(r: int, m: MRA, t: int) -> Or:
         if r in a.acc:
             to_or.append(
                 And(
-                    encode_resource_state(r, a.id, t + 1, m.num_agents()),
+                    encode_resource_state(r, a.id, t + 1, m.num_agents_plus()),
                     encode_action(f"req{r}", a, t),
                     h_encode_other_agents_not_requesting_r(m.agt, a, r, t)
                 )
             )
             to_or.append(
                 And(
-                    encode_resource_state(r, a.id, t + 1, m.num_agents()),
-                    encode_resource_state(r, a.id, t, m.num_agents()),
+                    encode_resource_state(r, a.id, t + 1, m.num_agents_plus()),
+                    encode_resource_state(r, a.id, t, m.num_agents_plus()),
                     Not(encode_action(f"req{r}", a, t)),
                     Not(encode_action("relall", a, t))
                 )
             )
             to_or.append(
                 And(
-                    encode_resource_state(r, 0, t + 1, m.num_agents()),
+                    encode_resource_state(r, 0, t + 1, m.num_agents_plus()),
                     encode_action(f"rel{r}", a, t)
                 )
             )
             to_or.append(
                 And(
-                    encode_resource_state(r, 0, t + 1, m.num_agents()),
-                    encode_resource_state(r, a.id, t, m.num_agents()),
+                    encode_resource_state(r, 0, t + 1, m.num_agents_plus()),
+                    encode_resource_state(r, a.id, t, m.num_agents_plus()),
                     encode_action("relall", a, 0)
                 )
             )
     to_or.append(
         And(
-            encode_resource_state(r, 0, t + 1, m.num_agents()),
-            encode_resource_state(r, 0, t, m.num_agents()),
+            encode_resource_state(r, 0, t + 1, m.num_agents_plus()),
+            encode_resource_state(r, 0, t, m.num_agents_plus()),
             h_encode_no_agents_requesting_r(m.agt, r, t)
         )
     )
     to_or.append(
         And(
-            encode_resource_state(r, 0, t + 1, m.num_agents()),
-            encode_resource_state(r, 0, t, m.num_agents()),
+            encode_resource_state(r, 0, t + 1, m.num_agents_plus()),
+            encode_resource_state(r, 0, t, m.num_agents_plus()),
             encode_all_pairs_of_agents_requesting_r(m.agt, r, t)
         )
     )
     return Or(*to_or)
 
 
-# TODO: Ask Nils if my modification ok (skipping agents that do not have acc to resource)??
 def h_encode_other_agents_not_requesting_r(agents: list[Agent], agent: Agent, r: int, t: int) -> And:
     to_conjunct = []
     for a in agents:
@@ -450,10 +448,17 @@ def encode_strategic_decision(action: str, agent: Agent, time: int) -> And:
 
 # "MAIN" ::::::::::::::::::::::::;
 
-
-problem = read_in_mra("/home/josuabotha/development/satmas/implementation/input.yml")
+start = time.perf_counter()
+problem = read_in_mra("/tests/five.yml")
 store = IDStore()
 encoding = encode_problem(problem)
 cnf = encoding.tseitin()
-print("\n\n\n\n-------------------\n\n\n")
-print(cnf.satisfy_one())
+before_sat = time.perf_counter()
+print(f"encoding took: {before_sat - start} seconds")
+if cnf.satisfy_one() is None:
+    print("UNKNOWN")
+else:
+    print("TRUE")
+print(f"sat solving took: {time.perf_counter() - before_sat} seconds")
+
+
