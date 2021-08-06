@@ -1,7 +1,7 @@
 import math
 from dataclasses import dataclass
 
-from pyeda.inter import *
+from sympy import *
 from yaml import SafeLoader
 from yaml import load
 
@@ -67,7 +67,7 @@ def encode_m_k(m: MRA, k: int) -> And:
     to_conjunct = [encode_initial_state(len(m.res), len(m.agt))]
     for t in range(0, k):
         to_conjunct.append((encode_evolution(m, t)))
-    return And(to_conjunct)
+    return And(*to_conjunct)
 
 
 def read_in_mra(path: str):
@@ -104,11 +104,11 @@ def m(x) -> int:
 def binary_encode(binary_string: str, name_prefix: str):
     to_conjunct = []
     for index, char in enumerate(reversed(binary_string)):
-        new_var = exprvar(f"{name_prefix}b{index}")
+        new_var = Symbol(f"{name_prefix}b{index}")
         to_conjunct.append(
             new_var if char == '1' else Not(new_var)
         )
-    return And(to_conjunct)
+    return And(*to_conjunct)
 
 
 def action_number(action: str):
@@ -195,7 +195,7 @@ def encode_initial_state(num_resources: int, num_agents: int) -> And:
     to_conjunct = []
     for r in range(0, num_resources):
         to_conjunct.append(encode_resource_state(r, 0, 0, num_agents))
-    return And(to_conjunct)
+    return And(*to_conjunct)
 
 
 # By Definition 13 in Paper
@@ -203,7 +203,7 @@ def encode_evolution(m: MRA, t: int) -> And:
     to_conjunct = []
     for r in m.res:
         to_conjunct.append((encode_r_evolution(r, m, t)))
-    return And(to_conjunct)
+    return And(*to_conjunct)
 
 
 # By Definition 13 in Paper
@@ -253,7 +253,8 @@ def encode_r_evolution(r: int, m: MRA, t: int) -> Or:
             encode_all_pairs_of_agents_requesting_r(m.agt, r, t)
         ))
     )
-    return Or(to_or)
+    print(to_or)
+    return Or(*to_or)
 
 
 # TODO: Ask Nils if my modification ok (skipping agents that do not have acc to resource)??
@@ -262,7 +263,7 @@ def h_encode_other_agents_not_requesting_r(agents: list[Agent], agent: Agent, r:
     for a in agents:
         if a.id != agent.id and r in a.acc:
             to_conjunct.append(Not(encode_action(f"req{r}", a, t)))
-    return And(to_conjunct)
+    return And(*to_conjunct)
 
 
 def h_encode_no_agents_requesting_r(agents: list[Agent], r: int, t: int) -> And:
@@ -270,7 +271,7 @@ def h_encode_no_agents_requesting_r(agents: list[Agent], r: int, t: int) -> And:
     for a in agents:
         if r in a.acc:
             to_conjunct.append(Not(encode_action(f"req{r}", a, t)))
-    return And(to_conjunct)
+    return And(*to_conjunct)
 
 
 def encode_all_pairs_of_agents_requesting_r(agents: list[Agent], r: int, t: int) -> Or:
@@ -282,7 +283,7 @@ def encode_all_pairs_of_agents_requesting_r(agents: list[Agent], r: int, t: int)
                 encode_action(f"req{r}", h_find_agent(agents, combination[1]), t)
             ))
         )
-    return Or(to_or)
+    return Or(*to_or)
 
 
 def h_find_agent(agents: list[Agent], a_id: int) -> Agent:
@@ -298,8 +299,8 @@ def encode_goal_reachability_formula(agents: list[Agent], total_num_agents: int,
         to_or = []
         for t in range(0, k):
             to_or.append(encode_goal(a, t, total_num_agents))
-        to_conjunct.append((Or(to_or)))
-    return And(to_conjunct)
+        to_conjunct.append((Or(*to_or)))
+    return And(*to_conjunct)
 
 
 # By Definition 17 in Paper
@@ -317,7 +318,7 @@ def encode_state_observation(state_observation: list[State], total_num_agents: i
         to_conjunct.append(
             encode_resource_state(state.r, state.a, time, total_num_agents)
         )
-    return And(to_conjunct)
+    return And(*to_conjunct)
 
 
 # By Definition 19 in Paper
@@ -326,7 +327,7 @@ def encode_goal(agent: Agent, time: int, total_num_agents: int) -> Or:
     for combination in all_selections_of_k_elements_from_set(agent.acc, agent.d):
         for r in combination:
             to_or.append((encode_resource_state(r, agent.id, time, total_num_agents)))
-    return Or(to_or)
+    return Or(*to_or)
 
 
 # By Definition 20 in Paper
