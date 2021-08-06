@@ -8,7 +8,7 @@ coalition:
   - a1
   - a2
 
-k: 1
+k: 5
 
 
 # Explicit Definition of Each Agent

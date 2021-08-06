@@ -109,15 +109,18 @@ def symbol_cnf_to_int_cnf(symbol_cnf: Tuple, store: IDStore):
 def encode_problem(p: Problem) -> And:
     return And(
         encode_goal_reachability_formula(p.mra.agt, p.mra.num_agents(), p.k),
-        encode_m_k(p.mra, p.k)
+        encode_m_k(p.mra, p.k),
+        encode_protocol(p.mra.agt, p.mra.num_agents(), p.k)
     )
 
 
 # also conjunct with def 14 function
 def encode_m_k(m: MRA, k: int) -> And:
-    to_conjunct = [encode_initial_state(len(m.res), len(m.agt))]
+    to_conjunct = [encode_initial_state(m.num_resources(), m.num_agents())]
     for t in range(0, k):
         to_conjunct.append((encode_evolution(m, t)))
+    print("test")
+    print(And(*to_conjunct))
     return And(*to_conjunct)
 
 
@@ -249,6 +252,55 @@ def encode_initial_state(num_resources: int, num_agents: int) -> And:
     return And(*to_conjunct)
 
 
+# By Definition 15 in Paper
+def encode_protocol(agents: list[Agent], num_agents: int, k: int) -> And:
+    to_conjunct = []
+    for t in range(0, k):
+        for a in agents:
+            to_conjunct.append(encode_agent_protocol(a, num_agents, t))
+    return And(*to_conjunct)
+
+
+def encode_agent_protocol(a: Agent, num_agents: int, t: int) -> Or:
+    to_or = []
+    for r in a.acc:
+        to_or.append(
+            And(
+                encode_action(f"req{r}", a, t),
+                Not(encode_goal(a, t, num_agents)),
+                encode_resource_state(r, 0, t, num_agents)
+            )
+        )
+        to_or.append(
+            And(
+                encode_action(f"rel{r}", a, t),
+                Not(encode_goal(a, t, num_agents)),
+                encode_resource_state(r, a.id, t, num_agents)
+            )
+        )
+    to_or.append(
+        And(
+            encode_action("relall", a, t),
+            encode_goal(a, t, num_agents)
+        )
+    )
+    to_or.append(
+        And(
+            encode_action("idle", a, t),
+            Not(encode_goal(a, t, num_agents)),
+            all_agent_resources_not_unassigned(a, num_agents, t)
+        )
+    )
+    return Or(*to_or)
+
+
+def all_agent_resources_not_unassigned(a: Agent, total_num_agents: int, t: int) -> And():
+    to_conjunct = []
+    for r in a.acc:
+        to_conjunct.append(Not(encode_resource_state(r, 0, t, total_num_agents)))
+    return And(*to_conjunct)
+
+
 # By Definition 13 in Paper
 def encode_evolution(m: MRA, t: int) -> And:
     to_conjunct = []
@@ -262,47 +314,47 @@ def encode_r_evolution(r: int, m: MRA, t: int) -> Or:
     to_or = []
     for a in m.agt:
         if r in a.acc:
-            to_or.append((
-                (And(
+            to_or.append(
+                And(
                     encode_resource_state(r, a.id, t + 1, m.num_agents()),
                     encode_action(f"req{r}", a, t),
                     h_encode_other_agents_not_requesting_r(m.agt, a, r, t)
-                ))
-            ))
+                )
+            )
             to_or.append(
-                (And(
+                And(
                     encode_resource_state(r, a.id, t + 1, m.num_agents()),
                     encode_resource_state(r, a.id, t, m.num_agents()),
                     Not(encode_action(f"req{r}", a, t)),
                     Not(encode_action("relall", a, t))
-                ))
+                )
             )
             to_or.append(
-                (And(
+                And(
                     encode_resource_state(r, 0, t + 1, m.num_agents()),
                     encode_action(f"rel{r}", a, t)
-                ))
+                )
             )
             to_or.append(
-                (And(
+                And(
                     encode_resource_state(r, 0, t + 1, m.num_agents()),
                     encode_resource_state(r, a.id, t, m.num_agents()),
                     encode_action("relall", a, 0)
-                ))
+                )
             )
     to_or.append(
-        (And(
+        And(
             encode_resource_state(r, 0, t + 1, m.num_agents()),
             encode_resource_state(r, 0, t, m.num_agents()),
             h_encode_no_agents_requesting_r(m.agt, r, t)
-        ))
+        )
     )
     to_or.append(
-        (And(
+        And(
             encode_resource_state(r, 0, t + 1, m.num_agents()),
             encode_resource_state(r, 0, t, m.num_agents()),
             encode_all_pairs_of_agents_requesting_r(m.agt, r, t)
-        ))
+        )
     )
     return Or(*to_or)
 
@@ -328,10 +380,10 @@ def encode_all_pairs_of_agents_requesting_r(agents: list[Agent], r: int, t: int)
     to_or = []
     for combination in all_selections_of_k_elements_from_set(list(map(lambda a: a.id, agents)), 2):
         to_or.append(
-            (And(
+            And(
                 encode_action(f"req{r}", h_find_agent(agents, combination[0]), t),
                 encode_action(f"req{r}", h_find_agent(agents, combination[1]), t)
-            ))
+            )
         )
     return Or(*to_or)
 
@@ -357,7 +409,7 @@ def encode_goal_reachability_formula(agents: list[Agent], total_num_agents: int,
 def encode_resource_state(resource: int, agent: int, time: int, total_num_agents: int) -> And:
     return binary_encode(
         to_binary_string(agent, total_num_agents),
-        f"r{resource}a{agent}t{time}"
+        f"r{resource}t{time}"
     )
 
 
@@ -376,7 +428,7 @@ def encode_goal(agent: Agent, time: int, total_num_agents: int) -> Or:
     to_or = []
     for combination in all_selections_of_k_elements_from_set(agent.acc, agent.d):
         for r in combination:
-            to_or.append((encode_resource_state(r, agent.id, time, total_num_agents)))
+            to_or.append(encode_resource_state(r, agent.id, time, total_num_agents))
     return Or(*to_or)
 
 
@@ -384,7 +436,7 @@ def encode_goal(agent: Agent, time: int, total_num_agents: int) -> Or:
 def encode_action(action: str, agent: Agent, time: int) -> And:
     return binary_encode(
         to_binary_string(action_number(action), len(agent.acc)),
-        f"act_{action}_a{agent.id}t{time}"
+        f"act_a{agent.id}t{time}"
     )
 
 
@@ -392,7 +444,7 @@ def encode_action(action: str, agent: Agent, time: int) -> And:
 def encode_strategic_decision(action: str, agent: Agent, time: int) -> And:
     return binary_encode(
         to_binary_string(action_number(action), len(agent.acc)),
-        f"s_act_{action}_a{agent.id}t{time}"
+        f"s_act_a{agent.id}t{time}"
     )
 
 
@@ -406,7 +458,7 @@ cnf = encoding.tseitin()
 print(cnf)
 # print("int rep")
 # print(symbol_cnf_to_int_cnf(encoding, store))
-print("-------------------")
+print("\n\n\n\n-------------------\n\n\n")
 # with Minisat22(bootstrap_with=symbol_cnf_to_int_cnf(encoding, store)) as ms:
 #     print(ms.solve())
 #     print(ms.get_core())
