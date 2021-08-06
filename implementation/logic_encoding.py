@@ -104,9 +104,9 @@ def m(x) -> int:
 def binary_encode(binary_string: str, name_prefix: str):
     to_conjunct = []
     for index, char in enumerate(reversed(binary_string)):
-        new_var = f"{name_prefix}b{index}"
+        new_var = exprvar(f"{name_prefix}b{index}")
         to_conjunct.append(
-            exprvar(new_var if char == '1' else Not(new_var))
+            new_var if char == '1' else Not(new_var)
         )
     return And(to_conjunct)
 
@@ -114,7 +114,7 @@ def binary_encode(binary_string: str, name_prefix: str):
 def action_number(action: str):
     if action == "idle":
         return 0
-    elif action == "release-all" or action == "relall":
+    elif action == "relall":
         return 1
     elif "req" == action[:3]:
         x = int(action[3:])
@@ -122,6 +122,24 @@ def action_number(action: str):
     elif "rel" == action[:3]:
         x = int(action[3:])
         return x * 2 + 1
+
+
+# return all combination of k elements from n
+def all_selections_of_k_elements_from_set(the_set: list[int], k: int) -> list[list[int]]:
+    return h_rec_all_selections_of_k_elements_from_set(the_set, [], 0, k)
+
+
+def h_rec_all_selections_of_k_elements_from_set(s: list[int], c: list[int], start: int, k: int) -> list[list[int]]:
+    if len(s) == 0 or k == 0:
+        return [c]
+    combinations = []
+    for i in range(start, len(s)):
+        s_copy = s.copy()
+        s_copy.remove(s[i])
+        c_copy = c.copy()
+        c_copy.append(s[i])
+        combinations += h_rec_all_selections_of_k_elements_from_set(s_copy, c_copy, i, k - 1)
+    return combinations
 
 
 # By Definition 4 in Paper
@@ -232,7 +250,7 @@ def encode_r_evolution(r: int, m: MRA, t: int) -> Or:
         (And(
             encode_resource_state(r, 0, t + 1, m.num_agents()),
             encode_resource_state(r, 0, t, m.num_agents()),
-            encode_some_two_agents_requesting_r(m.agt, r, t)
+            encode_all_pairs_of_agents_requesting_r(m.agt, r, t)
         ))
     )
     return Or(to_or)
@@ -255,9 +273,22 @@ def h_encode_no_agents_requesting_r(agents: list[Agent], r: int, t: int) -> And:
     return And(to_conjunct)
 
 
-def encode_some_two_agents_requesting_r(agents: list[Agent], r: int, t: int) -> Or:
+def encode_all_pairs_of_agents_requesting_r(agents: list[Agent], r: int, t: int) -> Or:
     to_or = []
+    for combination in all_selections_of_k_elements_from_set(list(map(lambda a: a.id, agents)), 2):
+        to_or.append(
+            (And(
+                encode_action(f"req{r}", h_find_agent(agents, combination[0]), t),
+                encode_action(f"req{r}", h_find_agent(agents, combination[1]), t)
+            ))
+        )
     return Or(to_or)
+
+
+def h_find_agent(agents: list[Agent], a_id: int) -> Agent:
+    for a in agents:
+        if a.id == a_id:
+            return a
 
 
 # By Definition 14 in Paper
@@ -292,28 +323,10 @@ def encode_state_observation(state_observation: list[State], total_num_agents: i
 # By Definition 19 in Paper
 def encode_goal(agent: Agent, time: int, total_num_agents: int) -> Or:
     to_or = []
-    for combination in h_all_satisfactory_resource_combinations(agent.acc, agent.d):
+    for combination in all_selections_of_k_elements_from_set(agent.acc, agent.d):
         for r in combination:
             to_or.append((encode_resource_state(r, agent.id, time, total_num_agents)))
     return Or(to_or)
-
-
-# return all combination of k elements from n
-def h_all_satisfactory_resource_combinations(acc: list[int], demand: int) -> list[list[int]]:
-    return h_rec_all_satisfactory_resource_combinations(acc, [], 0, demand)
-
-
-def h_rec_all_satisfactory_resource_combinations(acc: list[int], c: list[int], start: int, d: int) -> list[list[int]]:
-    if len(acc) == 0 or d == 0:
-        return [c]
-    combinations = []
-    for i in range(start, len(acc)):
-        acc_copy = acc.copy()
-        acc_copy.remove(acc[i])
-        c_copy = c.copy()
-        c_copy.append(acc[i])
-        combinations += h_rec_all_satisfactory_resource_combinations(acc_copy, c_copy, i, d - 1)
-    return combinations
 
 
 # By Definition 20 in Paper
@@ -335,13 +348,11 @@ def encode_strategic_decision(action: str, agent: Agent, time: int) -> And:
 # Evolution
 
 # Initial State
-
-
-problem = read_in_mra("input.yml")
-print(problem)
+problem = read_in_mra("/home/josuabotha/development/satmas/implementation/input.yml")
+print(encode_evolution(problem.mra, problem.k))
 # for itm in explicate_state_observation_set(problem.agt[1], problem):
 #     print(itm)
 
 # print(h_all_satisfactory_resource_combinations([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 6))
 
-print(action_number("rel1"))
+# print(action_number("rel1"))
