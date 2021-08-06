@@ -1,0 +1,31 @@
+# Problem Overview
+agents:
+  - a1
+  - a2
+  - a3
+
+coalition:
+  - a1
+  - a2
+
+k: 10
+
+
+# Explicit Definition of Each Agent
+a1:
+  access:
+  - r1
+  - r2
+  demand: 2
+
+a2:
+  access:
+  - r2
+  - r1
+  demand: 2
+
+a3:
+  access:
+    - r2
+    - r1
+  demand: 1
