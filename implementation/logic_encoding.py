@@ -1,5 +1,6 @@
 import math
 from dataclasses import dataclass
+from typing import Tuple
 
 from yaml import SafeLoader
 from yaml import load
@@ -7,7 +8,7 @@ from pyeda.inter import *
 
 
 # from pysat.formula import CNF
-# from pysat.solvers import Minisat22
+from pysat.solvers import Minisat22
 
 
 # Let "Paper" be used to denote the SMBF2021 submission by Nils Timm and Josua Botha
@@ -66,43 +67,43 @@ class State:
         return State(self.a, self.r)
 
 
-# class IDStore:
-#     next_id_source = 0
-#     variable_list = {}
-#
-#     def __generate_id(self):
-#         self.next_id_source += 1
-#         return self.next_id_source
-#
-#     def get_or_generate_var_id(self, variable):
-#         if variable not in self.variable_list:
-#             self.variable_list[variable] = self.__generate_id()
-#         return self.variable_list[variable]
-#
-#
-# def extract_negation_and_variable(symbol):
-#     symbol_string = str(symbol)
-#     if symbol_string[0] == '~':
-#         negation_sign = -1
-#         symbol_string = symbol_string[1:]
-#     else:
-#         negation_sign = 1
-#     return negation_sign, symbol_string
-#
-#
-# def symbol_cnf_to_int_cnf(symbol_cnf: Tuple, store: IDStore):
-#     int_cnf = []
-#     for clause in symbol_cnf:
-#         if type(clause) is Tuple:
-#             new_clause = []
-#             for symbol in clause:
-#                 negation_sign, variable = extract_negation_and_variable(symbol)
-#                 new_clause.append(negation_sign * store.get_or_generate_var_id(variable))
-#             int_cnf.append(new_clause)
-#         else:
-#             negation_sign, variable = extract_negation_and_variable(clause)
-#             int_cnf.append(negation_sign * store.get_or_generate_var_id(variable))
-#     return int_cnf
+class IDStore:
+    next_id_source = 0
+    variable_list = {}
+
+    def __generate_id(self):
+        self.next_id_source += 1
+        return self.next_id_source
+
+    def get_or_generate_var_id(self, variable):
+        if variable not in self.variable_list:
+            self.variable_list[variable] = self.__generate_id()
+        return self.variable_list[variable]
+
+
+def extract_negation_and_variable(symbol):
+    symbol_string = str(symbol)
+    if symbol_string[0] == '~':
+        negation_sign = -1
+        symbol_string = symbol_string[1:]
+    else:
+        negation_sign = 1
+    return negation_sign, symbol_string
+
+
+def symbol_cnf_to_int_cnf(symbol_cnf: Tuple, store: IDStore):
+    int_cnf = []
+    for clause in symbol_cnf:
+        if type(clause) is Tuple:
+            new_clause = []
+            for symbol in clause:
+                negation_sign, variable = extract_negation_and_variable(symbol)
+                new_clause.append(negation_sign * store.get_or_generate_var_id(variable))
+            int_cnf.append(new_clause)
+        else:
+            negation_sign, variable = extract_negation_and_variable(clause)
+            int_cnf.append(negation_sign * store.get_or_generate_var_id(variable))
+    return int_cnf
 
 
 def encode_problem(p: Problem) -> And:
@@ -396,11 +397,18 @@ def encode_strategic_decision(action: str, agent: Agent, time: int) -> And:
 
 
 problem = read_in_mra("/home/josuabotha/development/satmas/implementation/input.yml")
-# store = IDStore()
+store = IDStore()
 encoding = encode_problem(problem)
+print("encoding")
 print(encoding)
-print(encoding.tseitin())
-# print(symbol_cnf_to_int_cnf(to_cnf(encode_problem(problem), False), store))
-# with Minisat22(bootstrap_with=symbol_cnf_to_int_cnf(to_cnf(encode_problem(problem)), store)) as ms:
+print("tseiting")
+cnf = encoding.tseitin()
+print(cnf)
+# print("int rep")
+# print(symbol_cnf_to_int_cnf(encoding, store))
+print("-------------------")
+# with Minisat22(bootstrap_with=symbol_cnf_to_int_cnf(encoding, store)) as ms:
 #     print(ms.solve())
 #     print(ms.get_core())
+
+print(cnf.satisfy_one())
