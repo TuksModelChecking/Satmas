@@ -448,19 +448,12 @@ def encode_strategic_decision(action: str, agent: Agent, time: int) -> And:
     )
 
 
+# "MAIN" ::::::::::::::::::::::::;
+
+
 problem = read_in_mra("/home/josuabotha/development/satmas/implementation/input.yml")
 store = IDStore()
 encoding = encode_problem(problem)
-print("encoding")
-print(encoding)
-print("tseiting")
 cnf = encoding.tseitin()
-print(cnf)
-# print("int rep")
-# print(symbol_cnf_to_int_cnf(encoding, store))
 print("\n\n\n\n-------------------\n\n\n")
-# with Minisat22(bootstrap_with=symbol_cnf_to_int_cnf(encoding, store)) as ms:
-#     print(ms.solve())
-#     print(ms.get_core())
-
 print(cnf.satisfy_one())
