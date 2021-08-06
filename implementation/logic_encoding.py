@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from sympy import *
 from yaml import SafeLoader
 from yaml import load
+from pysat.formula import CNF
+from pysat.solvers import Minisat22
 
 
 # Let "Paper" be used to denote the SMBF2021 submission by Nils Timm and Josua Botha
@@ -60,6 +62,52 @@ class State:
 
     def clone(self):
         return State(self.a, self.r)
+
+
+class IDStore:
+    next_id_source = 0
+    variable_list = {}
+
+    def __generate_id(self):
+        self.next_id_source += 1
+        return self.next_id_source
+
+    def get_or_generate_var_id(self, variable):
+        if variable not in self.variable_list:
+            self.variable_list[variable] = self.__generate_id()
+        return self.variable_list[variable]
+
+
+def extract_negation_and_variable(symbol):
+    symbol_string = str(symbol)
+    if symbol_string[0] == '~':
+        negation_sign = -1
+        symbol_string = symbol_string[1:]
+    else:
+        negation_sign = 1
+    return negation_sign, symbol_string
+
+
+def symbol_cnf_to_int_cnf(symbol_cnf: Tuple, store: IDStore):
+    int_cnf = []
+    for clause in symbol_cnf:
+        if type(clause) is Tuple:
+            new_clause = []
+            for symbol in clause:
+                negation_sign, variable = extract_negation_and_variable(symbol)
+                new_clause.append(negation_sign * store.get_or_generate_var_id(variable))
+            int_cnf.append(new_clause)
+        else:
+            negation_sign, variable = extract_negation_and_variable(clause)
+            int_cnf.append(negation_sign * store.get_or_generate_var_id(variable))
+    return int_cnf
+
+
+def encode_problem(p: Problem) -> And:
+    return And(
+        encode_goal_reachability_formula(p.mra.agt, p.mra.num_agents(), p.k),
+        encode_m_k(p.mra, p.k)
+    )
 
 
 # also conjunct with def 14 function
@@ -253,7 +301,6 @@ def encode_r_evolution(r: int, m: MRA, t: int) -> Or:
             encode_all_pairs_of_agents_requesting_r(m.agt, r, t)
         ))
     )
-    print(to_or)
     return Or(*to_or)
 
 
@@ -346,14 +393,10 @@ def encode_strategic_decision(action: str, agent: Agent, time: int) -> And:
     )
 
 
-# Evolution
-
-# Initial State
 problem = read_in_mra("/home/josuabotha/development/satmas/implementation/input.yml")
-print(encode_evolution(problem.mra, problem.k))
-# for itm in explicate_state_observation_set(problem.agt[1], problem):
-#     print(itm)
-
-# print(h_all_satisfactory_resource_combinations([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 6))
-
-# print(action_number("rel1"))
+store = IDStore()
+print(encode_problem(problem))
+print(symbol_cnf_to_int_cnf(to_cnf(encode_problem(problem), False), store))
+# with Minisat22(bootstrap_with=symbol_cnf_to_int_cnf(to_cnf(encode_problem(problem)), store)) as ms:
+#     print(ms.solve())
+#     print(ms.get_core())
