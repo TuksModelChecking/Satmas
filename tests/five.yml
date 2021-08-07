@@ -19,108 +19,110 @@ coalition:
 
 k: 100
 
+
 a1:
   access:
-  - r3
   - r1
+  - r5
   - r7
-  - r8
   - r2
   - r4
-  - r5
   - r6
-  demand: 8
-a10:
-  access:
   - r3
-  - r1
-  - r8
-  - r2
-  - r4
-  - r5
-  - r6
-  demand: 8
+  demand: 5
 a2:
   access:
-  - r3
   - r1
-  - r7
-  - r8
-  - r2
-  - r4
   - r5
-  demand: 8
+  - r8
+  - r7
+  - r2
+  - r6
+  - r4
+  - r3
+  demand: 6
 a3:
   access:
-  - r3
   - r1
-  - r7
+  - r5
   - r8
+  - r7
   - r2
   - r6
-  - r5
-  demand: 8
+  - r4
+  demand: 5
 a4:
   access:
-  - r3
-  - r1
-  - r7
-  - r8
-  - r2
-  - r4
-  - r6
   - r5
-  demand: 8
+  - r1
+  - r8
+  - r7
+  - r2
+  - r6
+  - r4
+  - r3
+  demand: 6
 a5:
   access:
-  - r3
-  - r1
-  - r7
-  - r8
-  - r2
-  - r6
   - r5
+  - r1
+  - r8
+  - r7
+  - r2
   - r4
-  demand: 8
+  - r6
+  demand: 6
 a6:
   access:
-  - r3
-  - r1
-  - r7
-  - r8
-  - r2
-  - r6
   - r5
+  - r1
+  - r8
+  - r7
+  - r2
   - r4
-  demand: 8
+  - r6
+  - r3
+  demand: 5
 a7:
   access:
-  - r3
+  - r5
   - r1
-  - r7
   - r8
+  - r7
   - r2
   - r6
   - r4
-  - r5
-  demand: 8
+  - r3
+  demand: 5
 a8:
   access:
-  - r3
-  - r1
-  - r7
-  - r8
-  - r2
-  - r6
   - r5
-  demand: 8
+  - r1
+  - r8
+  - r7
+  - r2
+  - r4
+  - r3
+  demand: 5
 a9:
   access:
-  - r3
   - r1
-  - r7
+  - r5
   - r8
+  - r7
+  - r2
+  - r4
+  - r6
+  - r3
+  demand: 5
+a10:
+  access:
+  - r1
+  - r5
+  - r8
+  - r7
   - r2
   - r6
-  - r5
-  demand: 8
+  - r4
+  - r3
+  demand: 5

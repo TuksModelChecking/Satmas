@@ -69,24 +69,25 @@ class State:
 
 
 def iterative_solve(mra: MRA, k_low: int, k_high: int):
+    print("ITERATIVE SOLVING")
     total_encoding_time = 0
     total_solving_time = 0
     for k in range(k_low, k_high):
         encoding_start = time.perf_counter()
         e = encode_mra(mra, k)
         encoding_end = time.perf_counter()
-        print(f"k = {k}\n    e_t = {round(encoding_end - encoding_start, 1)}")
+        print(f"k = {k}\n    e_t = {round(encoding_end - encoding_start, 1)}s")
         solve_start = time.perf_counter()
         solved = solve(e)
         solve_end = time.perf_counter()
-        print(f"    s_t = {round(solve_end - solve_start, 1)}\n    sat: {'TRUE' if solved else 'false'}")
+        print(f"    s_t = {round(solve_end - solve_start, 1)}s\n      sat: {'TRUE' if solved else 'false'}")
         total_encoding_time += encoding_end - encoding_start
         total_solving_time += solve_end - solve_start
         if solved:
             print(f"    ...solved at bound k = {k}")
             break
-    print(f"\nTotal Encoding Time: {total_encoding_time}")
-    print(f"Total Solving Time: {total_solving_time}")
+    print(f"\nTotal Encoding Time: {round(total_encoding_time, 1)}s")
+    print(f"Total Solving Time: {round(total_solving_time, 1)}s")
 
 
 def solve(cnf: And) -> bool:
@@ -439,9 +440,9 @@ def encode_strategic_decision(action: str, agent: Agent, t: int) -> And:
 # "MAIN" ::::::::::::::::::::::::;
 
 start = time.perf_counter()
-problem = read_in_mra("/home/josuabotha/development/satmas/tests/one.yml")
+problem = read_in_mra("/home/josuabotha/development/satmas/tests/four.yml")
 
-iterative_solve(problem.mra, 1, 36)
+iterative_solve(problem.mra, 64, 65)
 
 
 
