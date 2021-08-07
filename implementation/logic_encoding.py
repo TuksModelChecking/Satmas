@@ -68,12 +68,37 @@ class State:
         return State(self.a, self.r)
 
 
+def iterative_solve(mra: MRA, k_low: int, k_high: int):
+    total_encoding_time = 0
+    total_solving_time = 0
+    for k in range(k_low, k_high):
+        encoding_start = time.perf_counter()
+        e = encode_mra(mra, k)
+        encoding_end = time.perf_counter()
+        print(f"k = {k}\n    e_t = {round(encoding_end - encoding_start, 1)}")
+        solve_start = time.perf_counter()
+        solved = solve(e)
+        solve_end = time.perf_counter()
+        print(f"    s_t = {round(solve_end - solve_start, 1)}\n    sat: {'TRUE' if solved else 'false'}")
+        total_encoding_time += encoding_end - encoding_start
+        total_solving_time += solve_end - solve_start
+        if solved:
+            print(f"    ...solved at bound k = {k}")
+            break
+    print(f"\nTotal Encoding Time: {total_encoding_time}")
+    print(f"Total Solving Time: {total_solving_time}")
+
+
+def solve(cnf: And) -> bool:
+    return cnf.satisfy_one() is not None
+
+
 def encode_mra(mra: MRA, k: int) -> And:
     return And(
         encode_goal_reachability_formula(mra.agt, mra.num_agents_plus(), k),
         encode_m_k(mra, k),
         encode_protocol(mra.agt, mra.num_agents_plus(), k)
-    )
+    ).tseitin()
 
 
 def encode_problem(p: Problem) -> And:
@@ -369,45 +394,45 @@ def encode_goal_reachability_formula(agents: list[Agent], total_num_agents: int,
 
 
 # By Definition 17 in Paper
-def encode_resource_state(resource: int, agent: int, time: int, total_num_agents: int) -> And:
+def encode_resource_state(resource: int, agent: int, t: int, total_num_agents: int) -> And:
     return binary_encode(
         to_binary_string(agent, total_num_agents),
-        f"r{resource}t{time}"
+        f"r{resource}t{t}"
     )
 
 
 # By Definition 18 in Paper
-def encode_state_observation(state_observation: list[State], total_num_agents: int, time: int) -> And:
+def encode_state_observation(state_observation: list[State], total_num_agents: int, t: int) -> And:
     to_conjunct = []
     for state in state_observation:
         to_conjunct.append(
-            encode_resource_state(state.r, state.a, time, total_num_agents)
+            encode_resource_state(state.r, state.a, t, total_num_agents)
         )
     return And(*to_conjunct)
 
 
 # By Definition 19 in Paper
-def encode_goal(agent: Agent, time: int, total_num_agents: int) -> Or:
+def encode_goal(agent: Agent, t: int, total_num_agents: int) -> Or:
     to_or = []
     for combination in all_selections_of_k_elements_from_set(agent.acc, agent.d):
         for r in combination:
-            to_or.append(encode_resource_state(r, agent.id, time, total_num_agents))
+            to_or.append(encode_resource_state(r, agent.id, t, total_num_agents))
     return Or(*to_or)
 
 
 # By Definition 20 in Paper
-def encode_action(action: str, agent: Agent, time: int) -> And:
+def encode_action(action: str, agent: Agent, t: int) -> And:
     return binary_encode(
         to_binary_string(action_number(action), len(agent.acc)),
-        f"act_a{agent.id}t{time}"
+        f"act_a{agent.id}t{t}"
     )
 
 
 # By Definition 21 in Paper
-def encode_strategic_decision(action: str, agent: Agent, time: int) -> And:
+def encode_strategic_decision(action: str, agent: Agent, t: int) -> And:
     return binary_encode(
         to_binary_string(action_number(action), len(agent.acc)),
-        f"s_act_a{agent.id}t{time}"
+        f"s_act_a{agent.id}t{t}"
     )
 
 
@@ -415,14 +440,8 @@ def encode_strategic_decision(action: str, agent: Agent, time: int) -> And:
 
 start = time.perf_counter()
 problem = read_in_mra("/home/josuabotha/development/satmas/tests/one.yml")
-encoding = encode_problem(problem)
-cnf = encoding.tseitin()
-before_sat = time.perf_counter()
-print(f"encoding took: {before_sat - start} seconds")
-if cnf.satisfy_one() is None:
-    print("UNKNOWN")
-else:
-    print("TRUE")
-print(f"sat solving took: {time.perf_counter() - before_sat} seconds")
+
+iterative_solve(problem.mra, 1, 36)
+
 
 
