@@ -68,51 +68,16 @@ class State:
         return State(self.a, self.r)
 
 
-class IDStore:
-    next_id_source = 0
-    variable_list = {}
-
-    def __generate_id(self):
-        self.next_id_source += 1
-        return self.next_id_source
-
-    def get_or_generate_var_id(self, variable):
-        if variable not in self.variable_list:
-            self.variable_list[variable] = self.__generate_id()
-        return self.variable_list[variable]
-
-
-def extract_negation_and_variable(symbol):
-    symbol_string = str(symbol)
-    if symbol_string[0] == '~':
-        negation_sign = -1
-        symbol_string = symbol_string[1:]
-    else:
-        negation_sign = 1
-    return negation_sign, symbol_string
-
-
-def symbol_cnf_to_int_cnf(symbol_cnf: Tuple, store: IDStore):
-    int_cnf = []
-    for clause in symbol_cnf:
-        if type(clause) is Tuple:
-            new_clause = []
-            for symbol in clause:
-                negation_sign, variable = extract_negation_and_variable(symbol)
-                new_clause.append(negation_sign * store.get_or_generate_var_id(variable))
-            int_cnf.append(new_clause)
-        else:
-            negation_sign, variable = extract_negation_and_variable(clause)
-            int_cnf.append(negation_sign * store.get_or_generate_var_id(variable))
-    return int_cnf
+def encode_mra(mra: MRA, k: int) -> And:
+    return And(
+        encode_goal_reachability_formula(mra.agt, mra.num_agents_plus(), k),
+        encode_m_k(mra, k),
+        encode_protocol(mra.agt, mra.num_agents_plus(), k)
+    )
 
 
 def encode_problem(p: Problem) -> And:
-    return And(
-        encode_goal_reachability_formula(p.mra.agt, p.mra.num_agents_plus(), p.k),
-        encode_m_k(p.mra, p.k),
-        encode_protocol(p.mra.agt, p.mra.num_agents_plus(), p.k)
-    )
+    return encode_mra(p.mra, p.k)
 
 
 # also conjunct with def 14 function
@@ -449,8 +414,7 @@ def encode_strategic_decision(action: str, agent: Agent, time: int) -> And:
 # "MAIN" ::::::::::::::::::::::::;
 
 start = time.perf_counter()
-problem = read_in_mra("/tests/five.yml")
-store = IDStore()
+problem = read_in_mra("/home/josuabotha/development/satmas/tests/one.yml")
 encoding = encode_problem(problem)
 cnf = encoding.tseitin()
 before_sat = time.perf_counter()
