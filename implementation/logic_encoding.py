@@ -7,6 +7,8 @@ from yaml import SafeLoader
 from yaml import load
 from pyeda.inter import *
 
+from pyeda.boolalg.expr import expr2dimacscnf
+
 
 # Let "Paper" be used to denote the SMBF2021 submission by Nils Timm and Josua Botha
 
@@ -74,6 +76,13 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int):
         encoding_end = time.perf_counter()
         print(f"k = {k}\n    e_t = {round(encoding_end - encoding_start, 1)}s")
         solve_start = time.perf_counter()
+        print("STARTING DICMAS ENCODING")
+        file = open(f"dimacs{k - k_low}.txt", "w")
+        file.write(str(
+                expr2dimacscnf(e)[1]
+        ))
+        file.close()
+        print("DIMACS ENCODING DONE")
         solved = solve(e)
         solve_end = time.perf_counter()
         print(f"    s_t = {round(solve_end - solve_start, 1)}s\n      sat: {'TRUE' if solved else 'false'}")
