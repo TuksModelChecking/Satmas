@@ -1,15 +1,11 @@
 import math
 import time
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, List, Dict
 
 from yaml import SafeLoader
 from yaml import load
 from pyeda.inter import *
-
-
-# from pysat.formula import CNF
-from pysat.solvers import Minisat22
 
 
 # Let "Paper" be used to denote the SMBF2021 submission by Nils Timm and Josua Botha
@@ -18,15 +14,15 @@ from pysat.solvers import Minisat22
 @dataclass
 class Agent:
     id: int
-    acc: list[int]
+    acc: List[int]
     d: int
 
 
 @dataclass
 class MRA:
-    agt: list[Agent]
-    res: list[int]
-    coalition: list[int]
+    agt: List[Agent]
+    res: List[int]
+    coalition: List[int]
 
     def num_agents_plus(self):
         return len(self.agt) + 1
@@ -53,7 +49,7 @@ class AgentAlias:
 @dataclass
 class UnCollapsedState:
     r: int
-    agents: list[AgentAlias]
+    agents: List[AgentAlias]
 
     def clone(self):
         return UnCollapsedState(self.r, list(map(lambda a: a.clone(), self.agents)))
@@ -169,15 +165,15 @@ def action_number(action: str):
 
 
 # return all combination of k elements from n
-def all_selections_of_k_elements_from_set(the_set: list[int], k: int) -> list[list[int]]:
+def all_selections_of_k_elements_from_set(the_set: List[int], k: int) -> List[List[int]]:
     return h_rec_all_selections_of_k_elements_from_set(the_set, [], 0, k)
 
 
-def h_rec_all_selections_of_k_elements_from_set(s: list[int], c: list[int], start: int, k: int) -> list[list[int]]:
+def h_rec_all_selections_of_k_elements_from_set(s: List[int], c: List[int], start_i: int, k: int) -> List[List[int]]:
     if len(s) == 0 or k == 0:
         return [c]
     combinations = []
-    for i in range(start, len(s)):
+    for i in range(start_i, len(s)):
         s_copy = s.copy()
         s_copy.remove(s[i])
         c_copy = c.copy()
@@ -187,14 +183,14 @@ def h_rec_all_selections_of_k_elements_from_set(s: list[int], c: list[int], star
 
 
 # By Definition 4 in Paper
-def explicate_state_observation_set(a_i: Agent, mra: MRA) -> list[list[State]]:
+def explicate_state_observation_set(a_i: Agent, mra: MRA) -> List[List[State]]:
     un_collapsed_observation_set = []
     for r in a_i.acc:
         un_collapsed_observation_set.append(h_explicate_all_possible_states_of_resource(r, mra.agt))
     return h_collapse_observation_set(un_collapsed_observation_set)
 
 
-def h_explicate_all_possible_states_of_resource(r: int, agt: list[Agent]) -> UnCollapsedState:
+def h_explicate_all_possible_states_of_resource(r: int, agt: List[Agent]) -> UnCollapsedState:
     agents_with_acc = []
     for a in agt:
         if r in a.acc:
@@ -202,15 +198,15 @@ def h_explicate_all_possible_states_of_resource(r: int, agt: list[Agent]) -> UnC
     return UnCollapsedState(r, agents_with_acc)
 
 
-def h_collapse_observation_set(un_collapsed_states: list[UnCollapsedState]):
+def h_collapse_observation_set(un_collapsed_states: List[UnCollapsedState]):
     return h_rec_collapse_observation_set(un_collapsed_states, [], h_initial_demand_saturation(un_collapsed_states))
 
 
 def h_rec_collapse_observation_set(
-        un_collapsed_states: list[UnCollapsedState],
-        collapsed_observation: list[State],
-        agent_demand_saturation: dict[int, int]
-) -> list[list[State]]:
+        un_collapsed_states: List[UnCollapsedState],
+        collapsed_observation: List[State],
+        agent_demand_saturation: Dict[int, int]
+) -> List[List[State]]:
     if len(un_collapsed_states) == 0:
         return [collapsed_observation]
     ucs: UnCollapsedState = un_collapsed_states.pop()
@@ -226,8 +222,8 @@ def h_rec_collapse_observation_set(
     return result_group
 
 
-def h_initial_demand_saturation(un_collapsed_states: list[UnCollapsedState]):
-    initial_saturation: dict[int, int] = {}
+def h_initial_demand_saturation(un_collapsed_states: List[UnCollapsedState]):
+    initial_saturation: Dict[int, int] = {}
     for state in un_collapsed_states:
         for agent in state.agents:
             initial_saturation[agent.id] = agent.d
@@ -243,7 +239,7 @@ def encode_initial_state(num_resources: int, num_agents: int) -> And:
 
 
 # By Definition 15 in Paper
-def encode_protocol(agents: list[Agent], num_agents: int, k: int) -> And:
+def encode_protocol(agents: List[Agent], num_agents: int, k: int) -> And:
     to_conjunct = []
     for t in range(0, k):
         for a in agents:
@@ -349,7 +345,7 @@ def encode_r_evolution(r: int, m: MRA, t: int) -> Or:
     return Or(*to_or)
 
 
-def h_encode_other_agents_not_requesting_r(agents: list[Agent], agent: Agent, r: int, t: int) -> And:
+def h_encode_other_agents_not_requesting_r(agents: List[Agent], agent: Agent, r: int, t: int) -> And:
     to_conjunct = []
     for a in agents:
         if a.id != agent.id and r in a.acc:
@@ -357,7 +353,7 @@ def h_encode_other_agents_not_requesting_r(agents: list[Agent], agent: Agent, r:
     return And(*to_conjunct)
 
 
-def h_encode_no_agents_requesting_r(agents: list[Agent], r: int, t: int) -> And:
+def h_encode_no_agents_requesting_r(agents: List[Agent], r: int, t: int) -> And:
     to_conjunct = []
     for a in agents:
         if r in a.acc:
@@ -365,7 +361,7 @@ def h_encode_no_agents_requesting_r(agents: list[Agent], r: int, t: int) -> And:
     return And(*to_conjunct)
 
 
-def encode_all_pairs_of_agents_requesting_r(agents: list[Agent], r: int, t: int) -> Or:
+def encode_all_pairs_of_agents_requesting_r(agents: List[Agent], r: int, t: int) -> Or:
     to_or = []
     for combination in all_selections_of_k_elements_from_set(list(map(lambda a: a.id, agents)), 2):
         to_or.append(
@@ -377,14 +373,14 @@ def encode_all_pairs_of_agents_requesting_r(agents: list[Agent], r: int, t: int)
     return Or(*to_or)
 
 
-def h_find_agent(agents: list[Agent], a_id: int) -> Agent:
+def h_find_agent(agents: List[Agent], a_id: int) -> Agent:
     for a in agents:
         if a.id == a_id:
             return a
 
 
 # By Definition 14 in Paper
-def encode_goal_reachability_formula(agents: list[Agent], total_num_agents: int, k: int) -> And:
+def encode_goal_reachability_formula(agents: List[Agent], total_num_agents: int, k: int) -> And:
     to_conjunct = []
     for a in agents:
         to_or = []
@@ -403,7 +399,7 @@ def encode_resource_state(resource: int, agent: int, t: int, total_num_agents: i
 
 
 # By Definition 18 in Paper
-def encode_state_observation(state_observation: list[State], total_num_agents: int, t: int) -> And:
+def encode_state_observation(state_observation: List[State], total_num_agents: int, t: int) -> And:
     to_conjunct = []
     for state in state_observation:
         to_conjunct.append(
@@ -440,9 +436,6 @@ def encode_strategic_decision(action: str, agent: Agent, t: int) -> And:
 # "MAIN" ::::::::::::::::::::::::;
 
 start = time.perf_counter()
-problem = read_in_mra("/home/josuabotha/development/satmas/tests/four.yml")
+problem = read_in_mra("/home/josua/Development/Satmas/tests/one.yml")
 
 iterative_solve(problem.mra, 64, 65)
-
-
-
