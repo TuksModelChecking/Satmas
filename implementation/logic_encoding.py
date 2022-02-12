@@ -1,4 +1,5 @@
 import math
+import sys
 import time
 from dataclasses import dataclass
 from typing import Tuple, List, Dict
@@ -9,6 +10,7 @@ from pyeda.inter import *
 
 from pyeda.boolalg.expr import expr2dimacscnf
 
+# TODO: fix bug where encoding of resources is based on number of resources, instead of explicitly defined resources
 
 # Let "Paper" be used to denote the SMBF2021 submission by Nils Timm and Josua Botha
 
@@ -66,23 +68,31 @@ class State:
         return State(self.a, self.r)
 
 
-def iterative_solve(mra: MRA, k_low: int, k_high: int):
+def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
     print("ITERATIVE SOLVING")
     total_encoding_time = 0
     total_solving_time = 0
     for k in range(k_low, k_high):
+        print(k)
         encoding_start = time.perf_counter()
         e = encode_mra(mra, k)
+        if e is False:
+            print("MRA is known to be unsolvable")
+            return False
         encoding_end = time.perf_counter()
         print(f"k = {k}\n    e_t = {round(encoding_end - encoding_start, 1)}s")
         solve_start = time.perf_counter()
         print("STARTING DIMACS ENCODING")
         file = open(f"dimacs{k - k_low}.txt", "w")
         file.write(str(
-                expr2dimacscnf(e)[1]
+            expr2dimacscnf(e)[1]
         ))
         file.close()
         print("DIMACS ENCODING DONE")
+
+        for a in str(e.satisfy_one()).split(", "):
+            print(a)
+
         solved = solve(e)
         solve_end = time.perf_counter()
         print(f"    s_t = {round(solve_end - solve_start, 1)}s\n      sat: {'TRUE' if solved else 'false'}")
@@ -93,6 +103,7 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int):
             break
     print(f"\nTotal Encoding Time: {round(total_encoding_time, 1)}s")
     print(f"Total Solving Time: {round(total_solving_time, 1)}s")
+    return solved
 
 
 def solve(cnf: And) -> bool:
@@ -100,11 +111,15 @@ def solve(cnf: And) -> bool:
 
 
 def encode_mra(mra: MRA, k: int) -> And:
-    return And(
+    mra_encoded = And(
         encode_goal_reachability_formula(mra.agt, mra.num_agents_plus(), k),
         encode_m_k(mra, k),
         encode_protocol(mra.agt, mra.num_agents_plus(), k)
-    ).tseitin()
+    )
+    if str(mra_encoded) == "0":
+        return False
+    else:
+        return mra_encoded.tseitin()
 
 
 def encode_problem(p: Problem) -> And:
@@ -119,8 +134,8 @@ def encode_m_k(m: MRA, k: int) -> And:
     return And(*to_conjunct)
 
 
-def read_in_mra(path: str):
-    yml_data = load(open(path, "r"), Loader=SafeLoader)
+def read_in_mra(ymal_path: str):
+    yml_data = load(open(ymal_path, "r"), Loader=SafeLoader)
     agents = []
     resources: set = set()
     for a_name in yml_data["agents"]:
@@ -242,7 +257,7 @@ def h_initial_demand_saturation(un_collapsed_states: List[UnCollapsedState]):
 # By Definition 12 in Paper
 def encode_initial_state(num_resources: int, num_agents: int) -> And:
     to_conjunct = []
-    for r in range(0, num_resources):
+    for r in range(1, num_resources + 1):
         to_conjunct.append(encode_resource_state(r, 0, 0, num_agents))
     return And(*to_conjunct)
 
@@ -250,7 +265,7 @@ def encode_initial_state(num_resources: int, num_agents: int) -> And:
 # By Definition 15 in Paper
 def encode_protocol(agents: List[Agent], num_agents: int, k: int) -> And:
     to_conjunct = []
-    for t in range(0, k):
+    for t in range(0, k + 1):
         for a in agents:
             to_conjunct.append(encode_agent_protocol(a, num_agents, t))
     return And(*to_conjunct)
@@ -273,20 +288,18 @@ def encode_agent_protocol(a: Agent, num_agents: int, t: int) -> Or:
                 encode_resource_state(r, a.id, t, num_agents)
             )
         )
-    to_or.append(
+    return Or(
+        Or(*to_or),
         And(
             encode_action("relall", a, t),
             encode_goal(a, t, num_agents)
-        )
-    )
-    to_or.append(
+        ),
         And(
             encode_action("idle", a, t),
             Not(encode_goal(a, t, num_agents)),
             all_agent_resources_not_unassigned(a, num_agents, t)
         )
     )
-    return Or(*to_or)
 
 
 def all_agent_resources_not_unassigned(a: Agent, total_num_agents: int, t: int) -> And():
@@ -337,21 +350,19 @@ def encode_r_evolution(r: int, m: MRA, t: int) -> Or:
                     encode_action("relall", a, 0)
                 )
             )
-    to_or.append(
+    return Or(
+        Or(*to_or),
         And(
             encode_resource_state(r, 0, t + 1, m.num_agents_plus()),
             encode_resource_state(r, 0, t, m.num_agents_plus()),
             h_encode_no_agents_requesting_r(m.agt, r, t)
-        )
-    )
-    to_or.append(
+        ),
         And(
             encode_resource_state(r, 0, t + 1, m.num_agents_plus()),
             encode_resource_state(r, 0, t, m.num_agents_plus()),
             encode_all_pairs_of_agents_requesting_r(m.agt, r, t)
         )
     )
-    return Or(*to_or)
 
 
 def h_encode_other_agents_not_requesting_r(agents: List[Agent], agent: Agent, r: int, t: int) -> And:
@@ -371,6 +382,8 @@ def h_encode_no_agents_requesting_r(agents: List[Agent], r: int, t: int) -> And:
 
 
 def encode_all_pairs_of_agents_requesting_r(agents: List[Agent], r: int, t: int) -> Or:
+    if len(agents) < 2:
+        return True
     to_or = []
     for combination in all_selections_of_k_elements_from_set(list(map(lambda a: a.id, agents)), 2):
         to_or.append(
@@ -393,7 +406,7 @@ def encode_goal_reachability_formula(agents: List[Agent], total_num_agents: int,
     to_conjunct = []
     for a in agents:
         to_or = []
-        for t in range(0, k):
+        for t in range(0, k + 1):
             to_or.append(encode_goal(a, t, total_num_agents))
         to_conjunct.append((Or(*to_or)))
     return And(*to_conjunct)
@@ -403,7 +416,7 @@ def encode_goal_reachability_formula(agents: List[Agent], total_num_agents: int,
 def encode_resource_state(resource: int, agent: int, t: int, total_num_agents: int) -> And:
     return binary_encode(
         to_binary_string(agent, total_num_agents),
-        f"r{resource}t{t}"
+        f"t{t}r{resource}"
     )
 
 
@@ -419,18 +432,22 @@ def encode_state_observation(state_observation: List[State], total_num_agents: i
 
 # By Definition 19 in Paper
 def encode_goal(agent: Agent, t: int, total_num_agents: int) -> Or:
+    if len(agent.acc) < agent.d:
+        return False
     to_or = []
     for combination in all_selections_of_k_elements_from_set(agent.acc, agent.d):
+        to_and = []
         for r in combination:
-            to_or.append(encode_resource_state(r, agent.id, t, total_num_agents))
+            to_and.append(encode_resource_state(r, agent.id, t, total_num_agents))
+        to_or.append(And(*to_and))
     return Or(*to_or)
 
 
 # By Definition 20 in Paper
 def encode_action(action: str, agent: Agent, t: int) -> And:
     return binary_encode(
-        to_binary_string(action_number(action), len(agent.acc)),
-        f"act_a{agent.id}t{t}"
+        to_binary_string(action_number(action), (len(agent.acc) * 2) + 2),
+        f"t{t}act_a{agent.id}"
     )
 
 
@@ -438,13 +455,19 @@ def encode_action(action: str, agent: Agent, t: int) -> And:
 def encode_strategic_decision(action: str, agent: Agent, t: int) -> And:
     return binary_encode(
         to_binary_string(action_number(action), len(agent.acc)),
-        f"s_act_a{agent.id}t{t}"
+        f"t{t}s_act_a{agent.id}"
     )
 
 
-# "MAIN" ::::::::::::::::::::::::;
+def main(given_path):
+    # start = time.perf_counter()
+    problem = read_in_mra(given_path)
+    return iterative_solve(problem.mra, problem.k, problem.k + 1)
 
-start = time.perf_counter()
-problem = read_in_mra("/home/josua/Development/Satmas/tests/one.yml")
 
-iterative_solve(problem.mra, 64, 65)
+if __name__ == "__main__":
+    path = "/home/josua/Development/Satmas/tests/10.yml"
+    if sys.argv.__sizeof__() == 2:
+        main(sys.argv[1])
+    else:
+        main(path)
