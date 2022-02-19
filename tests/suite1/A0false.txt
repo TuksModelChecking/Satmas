@@ -1,0 +1,15 @@
+agents:
+  - a1
+
+resources:
+  - r1
+
+coalition: 
+  - a1 
+
+k: 0
+
+a1:
+  demand: 1
+  access:
+    - r1

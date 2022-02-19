@@ -3,13 +3,13 @@ import implementation.logic_encoding as logic_encoding
 
 def test_a0():
     assert logic_encoding.main(
-        "/home/josua/Development/Satmas/tests/suite1/A0false.yml"
+        "/home/josua/Development/Satmas/tests/suite1/A0false.txt"
     ) is False, "A0 Should Not Be Solvable"
 
 
 def test_a1():
     assert logic_encoding.main(
-        "/home/josua/Development/Satmas/tests/suite1/A1true.yml"
+        "/home/josua/Development/Satmas/tests/suite1/A1true.txt"
     ) is True, "A1 Should Not Be Solvable"
 
 
@@ -129,7 +129,7 @@ def test_k2():
 
 def test_k3():
     assert logic_encoding.main(
-        "/home/josua/Development/Satmas/tests/suite1/K3false.yml"
+        "/home/josua/Development/Satmas/tests/suite1/K3false.txt"
     ) is False, "K3 Should Not Be Solvable"
 
 
