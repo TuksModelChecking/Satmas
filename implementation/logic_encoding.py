@@ -82,7 +82,22 @@ class NumberBinaryNumberPair:
 
 
 def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
-    print("ITERATIVE SOLVING")
+    print("\nTEST")
+    a1 = Agent(1, [2], 1)
+    t = 1
+
+    print("\nSEPARATE")
+    print(encode_action(f"rel{2}", a1, t))
+    print(Not(encode_goal(a1, t, 3)))
+    print(encode_resource_state(2, a1.id, t, 3))
+
+    print("\nAS ONE")
+    print(And(
+        encode_action(f"rel{2}", a1, t),
+        Not(encode_goal(a1, t, 3)),
+        encode_resource_state(2, a1.id, t, 3)
+    ))
+    print("\nITERATIVE SOLVING~")
     total_encoding_time = 0
     total_solving_time = 0
     for k in range(k_low, k_high):
@@ -220,9 +235,6 @@ def filter_containing(variables: List[str], containing: str) -> List[str]:
     return filtered
 
 
-
-
-
 def agent_action_path(variables: List[str]) -> List[str]:
     return variables
 
@@ -247,11 +259,11 @@ def encode_problem(p: Problem) -> And:
     return encode_mra(p.mra, p.k)
 
 
-# also conjunct with def 14 function
-def encode_m_k(m: MRA, k: int) -> And:
-    to_conjunct = [encode_initial_state(m.num_resources(), m.num_agents_plus())]
+# also, conjunct with def 14 function
+def encode_m_k(mra: MRA, k: int) -> And:
+    to_conjunct = [encode_initial_state(mra, mra.num_agents_plus())]
     for t in range(0, k):
-        to_conjunct.append((encode_evolution(m, t)))
+        to_conjunct.append((encode_evolution(mra, t)))
     return And(*to_conjunct)
 
 
@@ -376,9 +388,9 @@ def h_initial_demand_saturation(un_collapsed_states: List[UnCollapsedState]):
 
 
 # By Definition 12 in Paper
-def encode_initial_state(num_resources: int, num_agents: int) -> And:
+def encode_initial_state(mra: MRA, num_agents: int) -> And:
     to_conjunct = []
-    for r in range(1, num_resources + 1):
+    for r in mra.res:
         to_conjunct.append(encode_resource_state(r, 0, 0, num_agents))
     return And(*to_conjunct)
 
