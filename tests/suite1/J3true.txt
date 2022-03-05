@@ -16,7 +16,6 @@ k: 3
 a1:
   demand: 1
   access:
-    - r1
     - r2
 
 a2:

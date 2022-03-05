@@ -8,7 +8,7 @@ resources:
   - r3
 
 coalition: 
-  - a1 
+  - a1
   - a2
 
 k: 2

@@ -10,6 +10,7 @@ from pyeda.inter import *
 
 from pyeda.boolalg.expr import expr2dimacscnf
 
+
 # TODO: fix bug where encoding of resources is based on number of resources, instead of explicitly defined resources
 
 # Let "Paper" be used to denote the SMBF2021 submission by Nils Timm and Josua Botha
@@ -68,6 +69,18 @@ class State:
         return State(self.a, self.r)
 
 
+@dataclass
+class NumberBinaryNumberPair:
+    number: int
+    binary_number: List[int]
+
+    def binary_number_as_decimal(self):
+        total = 0
+        for index, b in enumerate(self.binary_number):
+            total += b * 2 ** index
+        return total
+
+
 def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
     print("ITERATIVE SOLVING")
     total_encoding_time = 0
@@ -90,8 +103,7 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         file.close()
         print("DIMACS ENCODING DONE")
 
-        for a in str(e.satisfy_one()).split(", "):
-            print(a)
+        print_solution_path(e)
 
         solved = solve(e)
         solve_end = time.perf_counter()
@@ -104,6 +116,115 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
     print(f"\nTotal Encoding Time: {round(total_encoding_time, 1)}s")
     print(f"Total Solving Time: {round(total_solving_time, 1)}s")
     return solved
+
+
+def print_solution_path(e):
+    all_variables = str(e.satisfy_one()).split(", ")
+    all_variables[0] = all_variables[0][1:]
+    all_variables[len(all_variables) - 1] = all_variables[len(all_variables) - 1][:1]
+    variables = filter_out_aux_vars(all_variables)
+
+    print("\nResource Ownership ================")
+    r_t_groups = timestamp_group(variables, "r")
+    print_resource_ownership(r_t_groups)
+
+    print("\nActions ===========================")
+    act_t_groups = timestamp_group(variables, "act_a")
+    print_agent_actions(act_t_groups)
+
+
+def filter_out_aux_vars(variables: List[str]) -> List[str]:
+    filtered = []
+    for v in variables:
+        if not v.__contains__("aux"):
+            filtered.append(v)
+    return filtered
+
+
+def timestamp_group(variables: List[str], after_t_split_val):
+    target_variables = filter_containing(variables, after_t_split_val)
+    variable_splits = []
+    largest = 0
+    for v in target_variables:
+        vs = v[1:].split(after_t_split_val)
+        if largest < int(vs[0]):
+            largest = int(vs[0])
+        variable_splits.append(vs)
+
+    timestamp_grouped_var_bits = []
+
+    for i in range(0, largest + 1):
+        timestamp_grouped_var_bits.append([])
+
+    for vs in variable_splits:
+        timestamp_grouped_var_bits[int(vs[0])].append(vs[1])
+
+    return timestamp_grouped_var_bits
+
+
+def print_resource_ownership(timestamp_grouped_resource_bits: List[List[str]]):
+    for t, g in enumerate(timestamp_grouped_resource_bits):
+        print("Time: " + str(t))
+        for pair in calculate_number_binary_number_pairs(g):
+            print(f"r{pair.number}=a{pair.binary_number_as_decimal()}")
+        print("--")
+
+
+def print_agent_actions(timestamp_grouped_agent_action_bits: List[List[str]]):
+    for t, g in enumerate(timestamp_grouped_agent_action_bits):
+        print("Time: " + str(t))
+        for pair in calculate_number_binary_number_pairs(g):
+            print(f"a{pair.number}={action_as_words(pair.binary_number_as_decimal())}")
+        print("--")
+
+
+def action_as_words(action_num: int) -> str:
+    if action_num == 0:
+        return "idle"
+    elif action_num == 1:
+        return "relall"
+    elif action_num % 2 == 0:
+        return f"req_r{int(action_num / 2)}"
+    else:
+        return f"rel_r{int((action_num - 1) / 2)}"
+
+
+def calculate_number_binary_number_pairs(g: List[str]) -> List[NumberBinaryNumberPair]:
+    resource_bitplace_bitvalues = {}
+    for sg in g:
+        split = sg.split("b")
+        bitplace_bitvalue = split[1].split(": ")
+        try:
+            resource_bitplace_bitvalues[split[0]].append(bitplace_bitvalue)
+        except KeyError:
+            resource_bitplace_bitvalues[split[0]] = [bitplace_bitvalue]
+
+    agent_resource_pairs = [NumberBinaryNumberPair(0, []) for i in range(0, len(resource_bitplace_bitvalues))]
+    for r in resource_bitplace_bitvalues:
+        agent_resource_pair = NumberBinaryNumberPair(
+            int(r),
+            [0 for i in range(0, len(resource_bitplace_bitvalues[r]))]
+        )
+        for pair in resource_bitplace_bitvalues[r]:
+            agent_resource_pair.binary_number[int(pair[0])] = int(pair[1])
+        agent_resource_pairs[int(r) - 1] = agent_resource_pair
+
+    return agent_resource_pairs
+
+
+def filter_containing(variables: List[str], containing: str) -> List[str]:
+    filtered = []
+    for v in variables:
+        if v.__contains__(containing):
+            filtered.append(v)
+    return filtered
+
+
+
+
+
+def agent_action_path(variables: List[str]) -> List[str]:
+    return variables
 
 
 def solve(cnf: And) -> bool:
