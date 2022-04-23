@@ -141,6 +141,12 @@ def test_k4():
     ) is True, "K4 Should Be Solvable"
 
 
+def test_email():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/problem.yml"
+    ) is True, "Problem should be solvable."
+
+
 if __name__ == "__main__":
     test_a0()
     test_a1()
@@ -166,4 +172,5 @@ if __name__ == "__main__":
     test_k2()
     test_k3()
     test_k4()
+    test_email()
     print("Everything passed")

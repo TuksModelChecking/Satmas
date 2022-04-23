@@ -36,6 +36,13 @@ class MRA:
         return len(self.res)
 
 
+M = MRA(
+    agt=[],
+    res=[],
+    coalition=[]
+)
+
+
 @dataclass
 class Problem:
     mra: MRA
@@ -244,6 +251,8 @@ def solve(cnf: And) -> bool:
 
 
 def encode_mra(mra: MRA, k: int) -> And:
+    global M
+    M = mra
     mra_encoded = And(
         encode_goal_reachability_formula(mra.agt, mra.num_agents_plus(), k),
         encode_m_k(mra, k),
@@ -280,6 +289,7 @@ def read_in_mra(ymal_path: str):
         for resource in agent.acc:
             resources.add(resource)
         agents.append(agent)
+
     return Problem(
         mra=MRA(
             agt=agents,
@@ -579,7 +589,7 @@ def encode_goal(agent: Agent, t: int, total_num_agents: int) -> Or:
 # By Definition 20 in Paper
 def encode_action(action: str, agent: Agent, t: int) -> And:
     return binary_encode(
-        to_binary_string(action_number(action), (len(agent.acc) * 2) + 2),
+        to_binary_string(action_number(action), (len(M.res) * 2) + 2),
         f"t{t}act_a{agent.id}"
     )
 
@@ -587,7 +597,7 @@ def encode_action(action: str, agent: Agent, t: int) -> And:
 # By Definition 21 in Paper
 def encode_strategic_decision(action: str, agent: Agent, t: int) -> And:
     return binary_encode(
-        to_binary_string(action_number(action), len(agent.acc)),
+        to_binary_string(action_number(action), (len(M.res) * 2) + 2),
         f"t{t}s_act_a{agent.id}"
     )
 
@@ -599,7 +609,7 @@ def main(given_path):
 
 
 if __name__ == "__main__":
-    path = "/home/josua/Development/Satmas/tests/10.yml"
+    path = "/home/josua/Development/Satmas/tests/problem.yml"
     if sys.argv.__sizeof__() == 2:
         main(sys.argv[1])
     else:
