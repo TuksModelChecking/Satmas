@@ -490,7 +490,7 @@ def encode_r_evolution(r: int, m: MRA, t: int) -> Or:
                 And(
                     encode_resource_state(r, 0, t + 1, m.num_agents_plus()),
                     encode_resource_state(r, a.id, t, m.num_agents_plus()),
-                    encode_action("relall", a, 0)
+                    encode_action("relall", a, t)
                 )
             )
     return Or(
