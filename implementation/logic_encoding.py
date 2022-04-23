@@ -119,6 +119,7 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         solve_start = time.perf_counter()
         print("STARTING DIMACS ENCODING")
         file = open(f"dimacs{k - k_low}.txt", "w")
+        print(e.encode_cnf()[0])
         file.write(str(
             expr2dimacscnf(e)[1]
         ))
