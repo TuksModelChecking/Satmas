@@ -609,7 +609,12 @@ def encode_frequency_optimization(mra: MRA, k: int) -> And:
     to_and = []
     for t in range(0, k + 1):
         for agent in mra.agt:
-            to_and.append(Implies(exprvar(f"t{t}_g_a{agent.id}"), encode_goal(agent, t, mra.num_agents_plus())))
+            to_and.append(
+                Implies(
+                    exprvar(f"t{t}_g_a{agent.id}"),
+                    encode_goal(agent, t, mra.num_agents_plus())
+                )
+            )
     return And(*to_and)
 
 
