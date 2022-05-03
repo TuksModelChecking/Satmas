@@ -257,7 +257,8 @@ def encode_mra(mra: MRA, k: int) -> And:
     mra_encoded = And(
         encode_goal_reachability_formula(mra.agt, mra.num_agents_plus(), k),
         encode_m_k(mra, k),
-        encode_protocol(mra.agt, mra.num_agents_plus(), k)
+        encode_protocol(mra.agt, mra.num_agents_plus(), k),
+        encode_aux_for_frequency_optimization(mra, k)
     )
     if str(mra_encoded) == "0":
         return False
@@ -601,6 +602,15 @@ def encode_strategic_decision(action: str, agent: Agent, t: int) -> And:
         to_binary_string(action_number(action), (len(M.res) * 2) + 2),
         f"t{t}s_act_a{agent.id}"
     )
+
+
+# By Definition 33 in Paper
+def encode_aux_for_frequency_optimization(mra: MRA, k: int) -> And:
+    to_and = []
+    for t in range(0, k + 1):
+        for agent in mra.agt:
+            to_and.append(Implies(exprvar(f"t{t}freq_aux_a{agent.id}"), encode_goal(agent, t, mra.num_agents_plus())))
+    return And(*to_and)
 
 
 def main(given_path):
