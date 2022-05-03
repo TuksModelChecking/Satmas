@@ -147,6 +147,8 @@ def test_email():
     ) is True, "Problem should be solvable."
 
 
+# TODO: Convert dimacs file to weighted, with only hard clauses - verify tests pass
+
 if __name__ == "__main__":
     test_a0()
     test_a1()

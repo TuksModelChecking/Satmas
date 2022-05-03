@@ -1,6 +1,7 @@
 import math
 import sys
 import time
+import subprocess
 from dataclasses import dataclass
 from typing import Tuple, List, Dict
 
@@ -14,7 +15,7 @@ from pyeda.boolalg.expr import expr2dimacscnf
 # TODO: fix bug where encoding of resources is based on number of resources, instead of explicitly defined resources
 
 # Let "Paper" be used to denote the SMBF2021 submission by Nils Timm and Josua Botha
-
+# Let "Paper 2" be used to denote the follow-up journal paper, by the same authors.
 
 @dataclass
 class Agent:
@@ -126,9 +127,15 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         file.close()
         print("DIMACS ENCODING DONE")
 
-        print_solution_path(e)
-
-        solved = solve(e)
+        print("\nSTARTING EXTERNAL SOLVER")
+        p = subprocess.run(args='dimacs0.txt', executable=f'./open-wbo_static', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(str(p.stdout).split("\\ns").pop()[1:14])
+        solved = str(p.stdout).split("\\ns").pop()[1:14] == "OPTIMUM FOUND"
+        print(solve(e))
+        print("\nENDING EXTERNAL SOLVER")
+        # print_solution_path(e)
+        #
+        # solved = solve(e)
         solve_end = time.perf_counter()
         print(f"    s_t = {round(solve_end - solve_start, 1)}s\n      sat: {'TRUE' if solved else 'false'}")
         total_encoding_time += encoding_end - encoding_start
@@ -604,7 +611,7 @@ def encode_strategic_decision(action: str, agent: Agent, t: int) -> And:
     )
 
 
-# By Definition 33 in Paper
+# By Definition 33 in Paper 2
 def encode_frequency_optimization(mra: MRA, k: int) -> And:
     to_and = []
     for t in range(0, k + 1):
