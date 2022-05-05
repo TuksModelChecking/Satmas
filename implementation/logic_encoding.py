@@ -90,21 +90,6 @@ class NumberBinaryNumberPair:
 
 
 def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
-    print("\nTEST")
-    a1 = Agent(1, [2], 1)
-    t = 1
-
-    print("\nSEPARATE")
-    print(encode_action(f"rel{2}", a1, t))
-    print(Not(encode_goal(a1, t, 3)))
-    print(encode_resource_state(2, a1.id, t, 3))
-
-    print("\nAS ONE")
-    print(And(
-        encode_action(f"rel{2}", a1, t),
-        Not(encode_goal(a1, t, 3)),
-        encode_resource_state(2, a1.id, t, 3)
-    ))
     print("\nITERATIVE SOLVING~")
     total_encoding_time = 0
     total_solving_time = 0
@@ -119,16 +104,21 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         print(f"k = {k}\n    e_t = {round(encoding_end - encoding_start, 1)}s")
         solve_start = time.perf_counter()
         print("STARTING DIMACS ENCODING")
-        file = open(f"dimacs{k - k_low}.txt", "w")
-        print(e.encode_cnf()[0])
-        file.write(str(
-            expr2dimacscnf(e)[1]
-        ))
+        name_number_map = (e.encode_cnf()[0])
+        print(name_number_map[1])
+        print(name_number_map[exprvar('t0r1b0')])
+        dimacs = str(expr2dimacscnf(e)[1]).split("\n")
+        num_soft_clauses = 100
+        wdimacs = harden_clauses(dimacs, num_soft_clauses)
+        file = open("dimacs.txt", "w")
+        file.writelines(wdimacs)
         file.close()
         print("DIMACS ENCODING DONE")
 
         print("\nSTARTING EXTERNAL SOLVER")
-        p = subprocess.run(args='dimacs0.txt', executable=f'./open-wbo_static', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.run(['./open-wbo_static', 'dimacs.txt'], stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+        print(str(p.stdout))
         print(str(p.stdout).split("\\ns").pop()[1:14])
         solved = str(p.stdout).split("\\ns").pop()[1:14] == "OPTIMUM FOUND"
         print(solve(e))
@@ -146,6 +136,19 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
     print(f"\nTotal Encoding Time: {round(total_encoding_time, 1)}s")
     print(f"Total Solving Time: {round(total_solving_time, 1)}s")
     return solved
+
+
+def harden_clauses(data, num_soft_clauses):
+    info_vars = data[0].split()
+    num_vars = info_vars[2]
+    num_clauses = info_vars[3]
+    weight_of_hard_clauses = int(num_clauses) + num_soft_clauses
+
+    data[0] = f"p wcnf {num_vars} {num_clauses} {weight_of_hard_clauses}\n"
+    for i in range(1, int(num_clauses) + 1):
+        data[i] = f"{weight_of_hard_clauses} {data[i]}\n"
+
+    return data
 
 
 def print_solution_path(e):
