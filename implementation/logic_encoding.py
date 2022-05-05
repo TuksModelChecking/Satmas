@@ -104,12 +104,12 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         print(f"k = {k}\n    e_t = {round(encoding_end - encoding_start, 1)}s")
         solve_start = time.perf_counter()
         print("STARTING DIMACS ENCODING")
-        name_number_map = (e.encode_cnf()[0])
-        print(name_number_map[1])
-        print(name_number_map[exprvar('t0r1b0')])
+
         dimacs = str(expr2dimacscnf(e)[1]).split("\n")
-        num_soft_clauses = 100
-        wdimacs = harden_clauses(dimacs, num_soft_clauses)
+        numbers = g_aux_var_number_pairs(e.encode_cnf()[0])
+        for n in numbers:
+            dimacs.append(f"1 {n} 0\n")
+        wdimacs = harden_clauses(dimacs, len(numbers))
         file = open("dimacs.txt", "w")
         file.writelines(wdimacs)
         file.close()
@@ -138,14 +138,23 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
     return solved
 
 
+def g_aux_var_number_pairs(name_number_map) -> dict:
+    numbers = {}
+    for k in name_number_map:
+        if str(k).__contains__("_g_a") and not str(k).__contains__("~"):
+            numbers[name_number_map[k]] = k
+    return numbers
+
+
 def harden_clauses(data, num_soft_clauses):
     info_vars = data[0].split()
     num_vars = info_vars[2]
-    num_clauses = info_vars[3]
-    weight_of_hard_clauses = int(num_clauses) + num_soft_clauses
+    num_hard_clauses = int(info_vars[3])
+    total_num_clauses = int(info_vars[3]) + num_soft_clauses
+    weight_of_hard_clauses = total_num_clauses
 
-    data[0] = f"p wcnf {num_vars} {num_clauses} {weight_of_hard_clauses}\n"
-    for i in range(1, int(num_clauses) + 1):
+    data[0] = f"p wcnf {num_vars} {total_num_clauses} {weight_of_hard_clauses}\n"
+    for i in range(1, int(num_hard_clauses) + 1):
         data[i] = f"{weight_of_hard_clauses} {data[i]}\n"
 
     return data
