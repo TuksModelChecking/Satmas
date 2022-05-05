@@ -90,7 +90,7 @@ class NumberBinaryNumberPair:
 
 
 def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
-    print("\nITERATIVE SOLVING~")
+    # print("\nITERATIVE SOLVING~")
     total_encoding_time = 0
     total_solving_time = 0
     for k in range(k_low, k_high):
@@ -101,9 +101,9 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
             print("MRA is known to be unsolvable")
             return False
         encoding_end = time.perf_counter()
-        print(f"k = {k}\n    e_t = {round(encoding_end - encoding_start, 1)}s")
+        # print(f"k = {k}\n    e_t = {round(encoding_end - encoding_start, 1)}s")
         solve_start = time.perf_counter()
-        print("STARTING DIMACS ENCODING")
+        # print("STARTING DIMACS ENCODING")
 
         dimacs = str(expr2dimacscnf(e)[1]).split("\n")
         numbers = g_aux_var_number_pairs(e.encode_cnf()[0])
@@ -113,16 +113,23 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         file = open("dimacs.txt", "w")
         file.writelines(wdimacs)
         file.close()
-        print("DIMACS ENCODING DONE")
-
-        print("\nSTARTING EXTERNAL SOLVER")
+        # print("DIMACS ENCODING DONE")
+        print("\n---")
+        print("STARTING EXTERNAL SOLVER")
         p = subprocess.run(['./open-wbo_static', 'dimacs.txt'], stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
-        print(str(p.stdout))
-        print(str(p.stdout).split("\\ns").pop()[1:14])
-        solved = str(p.stdout).split("\\ns").pop()[1:14] == "OPTIMUM FOUND"
-        print(solve(e))
-        print("\nENDING EXTERNAL SOLVER")
+
+        wbo_printout = str(p.stdout).split("\\ns")
+        s = wbo_printout.pop()[1:14]
+        print(s)
+        solved = s == "OPTIMUM FOUND"
+        if solved:
+            n_s_solved = wbo_printout.pop().split("\\no ")[-2:]
+            print(f"\nNum soft clauses: {len(numbers)}")
+            print(f"Nums at end: {n_s_solved[1]}{f' and {n_s_solved[0]}' if len(n_s_solved[0]) < 10 else ''}")
+
+        print("---\n")
+        # print("\nENDING EXTERNAL SOLVER")
         # print_solution_path(e)
         #
         # solved = solve(e)
@@ -131,9 +138,9 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         total_encoding_time += encoding_end - encoding_start
         total_solving_time += solve_end - solve_start
         if solved:
-            print(f"    ...solved at bound k = {k}")
+            # print(f"    ...solved at bound k = {k}")
             break
-    print(f"\nTotal Encoding Time: {round(total_encoding_time, 1)}s")
+    # print(f"\nTotal Encoding Time: {round(total_encoding_time, 1)}s")
     print(f"Total Solving Time: {round(total_solving_time, 1)}s")
     return solved
 
