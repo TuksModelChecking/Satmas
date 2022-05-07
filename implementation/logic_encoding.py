@@ -114,7 +114,7 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         file.writelines(wdimacs)
         file.close()
         # print("DIMACS ENCODING DONE")
-        print("\n---")
+        print("---")
         print("STARTING EXTERNAL SOLVER")
         p = subprocess.run(['./open-wbo_static', 'dimacs.txt'], stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
@@ -125,10 +125,10 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         solved = s == "OPTIMUM FOUND"
         if solved:
             n_s_solved = wbo_printout.pop().split("\\no ")[-2:]
-            print(f"\nNum soft clauses: {len(numbers)}")
-            print(f"Nums at end: {n_s_solved[1]}{f' and {n_s_solved[0]}' if len(n_s_solved[0]) < 10 else ''}")
-
-        print("---\n")
+            print(f"Num soft clauses: {len(numbers)}")
+            # print(f"Nums at end: {n_s_solved[1]}{f' and {n_s_solved[0]}' if len(n_s_solved[0]) < 10 else ''}")
+            print(f"Payoff {len(numbers) - int(n_s_solved[1])}")
+        print("---")
         # print("\nENDING EXTERNAL SOLVER")
         # print_solution_path(e)
         #
@@ -651,8 +651,8 @@ def main(given_path):
 
 
 if __name__ == "__main__":
-    path = "/home/josua/Development/Satmas/tests/problem.yml"
+    path = "/home/josua/Development/Satmas/tests/paper/opt4a4r_1.yml"
     if sys.argv.__sizeof__() == 2:
-        main(sys.argv[1])
-    else:
-        main(path)
+        path = sys.argv[1]
+    print(path.split("/").pop())
+    main(path)
