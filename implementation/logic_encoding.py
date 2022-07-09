@@ -106,7 +106,9 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         # print("STARTING DIMACS ENCODING")
 
         dimacs = str(expr2dimacscnf(e)[1]).split("\n")
-        numbers = extract_var_numbers(e.encode_cnf()[0], "_nu_r")
+        numbers = extract_var_numbers(e.encode_cnf()[0], "nu_r")
+        print("NUMBERS!!")
+        print(numbers)
         for n in numbers:
             dimacs.append(f"1 {n} 0\n")
         wdimacs = harden_clauses(dimacs, len(numbers))
@@ -284,6 +286,7 @@ def encode_mra(mra: MRA, k: int) -> And:
         encode_goal_reachability_formula(mra.agt, mra.num_agents_plus(), k),
         encode_m_k(mra, k),
         encode_protocol(mra.agt, mra.num_agents_plus(), k),
+        encode_aux_resource_cost_variables(mra, k)
         # encode_frequency_optimization(mra, k)
     )
     if str(mra_encoded) == "0":
