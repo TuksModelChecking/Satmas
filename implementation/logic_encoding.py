@@ -106,7 +106,7 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         # print("STARTING DIMACS ENCODING")
 
         dimacs = str(expr2dimacscnf(e)[1]).split("\n")
-        numbers = g_aux_var_number_pairs(e.encode_cnf()[0])
+        numbers = extract_var_numbers(e.encode_cnf()[0], "_nu_r")
         for n in numbers:
             dimacs.append(f"1 {n} 0\n")
         wdimacs = harden_clauses(dimacs, len(numbers))
@@ -116,7 +116,7 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         # print("DIMACS ENCODING DONE")
         print("---")
         print("STARTING EXTERNAL SOLVER")
-        p = subprocess.run(['./open-wbo_static', 'dimacs.txt'], stdout=subprocess.PIPE,
+        p = subprocess.run(['./open-wbo_release', 'dimacs.txt'], stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
 
         wbo_printout = str(p.stdout).split("\\ns")
@@ -145,10 +145,10 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
     return solved
 
 
-def g_aux_var_number_pairs(name_number_map) -> dict:
+def extract_var_numbers(name_number_map, var_name="_g_a") -> dict:
     numbers = {}
     for k in name_number_map:
-        if str(k).__contains__("_g_a") and not str(k).__contains__("~"):
+        if str(k).__contains__(var_name) and not str(k).__contains__("~"):
             numbers[name_number_map[k]] = k
     return numbers
 
@@ -284,7 +284,7 @@ def encode_mra(mra: MRA, k: int) -> And:
         encode_goal_reachability_formula(mra.agt, mra.num_agents_plus(), k),
         encode_m_k(mra, k),
         encode_protocol(mra.agt, mra.num_agents_plus(), k),
-        encode_frequency_optimization(mra, k)
+        # encode_frequency_optimization(mra, k)
     )
     if str(mra_encoded) == "0":
         return False
@@ -644,6 +644,24 @@ def encode_frequency_optimization(mra: MRA, k: int) -> And:
     return And(*to_and)
 
 
+# By Definition 21 in FROM2022
+def encode_aux_resource_cost_variables(mra: MRA, k: int) -> And:
+    to_and = []
+    for r in mra.res:
+        to_and_inner = []
+        for t in range(0, k + 1):
+            to_and_inner.append(
+                encode_resource_state(r, 0, t, mra.num_agents_plus())
+            )
+        to_and.append(
+            Implies(
+                exprvar(f"nu_r{r}"),
+                And(*to_and_inner)
+            )
+        )
+    return And(*to_and)
+
+
 def main(given_path):
     # start = time.perf_counter()
     problem = read_in_mra(given_path)
@@ -651,8 +669,8 @@ def main(given_path):
 
 
 if __name__ == "__main__":
-    path = "/home/josua/Development/Satmas/tests/paper/opt4a4r_1.yml"
-    if sys.argv.__sizeof__() == 2:
+    path = "/home/josua/Development/Satmas/tests/paper/opt8a8r_1.yml"
+    if len(sys.argv) >= 2:
         path = sys.argv[1]
     print(path.split("/").pop())
     main(path)
