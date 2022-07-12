@@ -147,6 +147,24 @@ def test_email():
     ) is True, "Problem should be solvable."
 
 
+def r1_false():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/from/R1False.yml"
+    ) is False, "Problem should not be solvable."
+
+
+def r2_true():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/from/R2Unused0True.yml"
+    ) is True, "Problem should be solvable."
+
+
+def r3_unused2_true():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/from/R3Unused1True.yml"
+    ) is True, "Problem should be solvable."
+
+
 if __name__ == "__main__":
     test_a0()
     test_a1()
