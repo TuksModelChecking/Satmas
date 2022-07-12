@@ -639,7 +639,7 @@ def encode_frequency_optimization(mra: MRA, k: int) -> And:
     for t in range(0, k + 1):
         for agent in mra.agt:
             to_and.append(
-                Implies(
+                Equal(
                     exprvar(f"t{t}_g_a{agent.id}"),
                     encode_goal(agent, t, mra.num_agents_plus())
                 )
@@ -657,7 +657,7 @@ def encode_aux_resource_cost_variables(mra: MRA, k: int) -> And:
                 encode_resource_state(r, 0, t, mra.num_agents_plus())
             )
         to_and.append(
-            Implies(
+            Equal(
                 exprvar(f"nu_r{r}"),
                 And(*to_and_inner)
             )
