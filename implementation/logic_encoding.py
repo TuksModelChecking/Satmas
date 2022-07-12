@@ -286,8 +286,8 @@ def encode_mra(mra: MRA, k: int) -> And:
         encode_goal_reachability_formula(mra.agt, mra.num_agents_plus(), k),
         encode_m_k(mra, k),
         encode_protocol(mra.agt, mra.num_agents_plus(), k),
-        encode_aux_resource_cost_variables(mra, k)
-        # encode_frequency_optimization(mra, k)
+        encode_aux_resource_cost_variables(mra, k),
+        encode_frequency_optimization(mra, k)
     )
     if str(mra_encoded) == "0":
         return False
@@ -470,8 +470,8 @@ def encode_agent_protocol(a: Agent, num_agents: int, t: int) -> Or:
         ),
         And(
             encode_action("idle", a, t),
-            Not(encode_goal(a, t, num_agents)),
-            all_agent_resources_not_unassigned(a, num_agents, t)
+            Not(encode_goal(a, t, num_agents))
+            # all_agent_resources_not_unassigned(a, num_agents, t)
         )
     )
 
