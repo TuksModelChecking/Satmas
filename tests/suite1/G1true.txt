@@ -12,7 +12,6 @@ coalition:
 
 k: 1
 
-
 a1:
   demand: 1
   access:

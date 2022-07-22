@@ -99,6 +99,90 @@ def test_f4():
     ) is False, "F4 Should Not Be Solvable"
 
 
+def test_g0():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/G0false.txt"
+    ) is False, "Problem should not be solvable."
+
+
+def test_g1():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/G1true.txt"
+    ) is True, "Problem not be solvable."
+
+
+def test_g2():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/G2true.txt"
+    ) is True, "Problem should be solvable."
+
+
+def test_g3():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/G3true.txt"
+    ) is True, "Problem should be solvable."
+
+
+def test_h0():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/H0false.txt"
+    ) is False, "Problem should not be solvable."
+
+
+def test_h1():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/H1false.txt"
+    ) is False, "Problem should not be solvable."
+
+
+def test_h2():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/H2false.txt"
+    ) is False, "Problem should not be solvable."
+
+
+def test_h3():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/H3true.txt"
+    ) is True, "Problem should be solvable."
+
+
+def test_h4():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/H4true.txt"
+    ) is True, "Problem should be solvable."
+
+
+def test_i0():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/I0false.txt"
+    ) is False, "Problem should not be solvable."
+
+
+def test_i1():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/I1false.txt"
+    ) is False, "Problem should not be solvable."
+
+
+def test_i2():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/I2false.txt"
+    ) is False, "Problem should not be solvable."
+
+
+def test_i3():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/I3false.txt"
+    ) is False, "Problem should not be solvable."
+
+
+def test_i4():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/I4false.txt"
+    ) is False, "Problem should not be solvable."
+
+
 def test_i5():
     assert logic_encoding.main(
         f"{INITIAL_PATH}/Satmas/tests/suite1/I5true.txt"
@@ -121,6 +205,12 @@ def test_j3():
     assert logic_encoding.main(
         f"{INITIAL_PATH}/Satmas/tests/suite1/J3true.txt"
     ) is True, "J3 Should Be Solvable"
+
+
+def test_k0():
+    assert logic_encoding.main(
+        f"{INITIAL_PATH}/Satmas/tests/suite1/K0false.txt"
+    ) is False, "Problem should not be solvable."
 
 
 def test_k1():
@@ -200,10 +290,25 @@ if __name__ == "__main__":
     test_f2()
     test_f3()
     test_f4()
+    test_g0()
+    test_g1()
+    test_g2()
+    test_g3()
+    test_h0()
+    test_h1()
+    test_h2()
+    test_h3()
+    test_h4()
+    test_i0()
+    test_i1()
+    test_i2()
+    test_i3()
+    test_i4()
     test_i5()
     test_j1()
     test_j2()
     test_j3()
+    test_k0()
     test_k1()
     test_k1()
     test_k2()

@@ -109,8 +109,10 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         numbers = extract_var_numbers(e.encode_cnf()[0], "nu_r")
         print("NUMBERS!!")
         print(numbers)
+        count = 1
         for n in numbers:
-            dimacs.append(f"1 {n} 0\n")
+            dimacs.append(f"{count} {n} 0\n")
+            count += 1
         wdimacs = harden_clauses(dimacs, len(numbers))
         file = open("dimacs.txt", "w")
         file.writelines(wdimacs)
@@ -121,15 +123,17 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         p = subprocess.run(['./open-wbo_release', 'dimacs.txt'], stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
 
+        print(str(p.stdout))
         wbo_printout = str(p.stdout).split("\\ns")
         s = wbo_printout.pop()[1:14]
         print(s)
         solved = s == "OPTIMUM FOUND"
         if solved:
+            # print(wbo_printout)
             n_s_solved = wbo_printout.pop().split("\\no ")[-2:]
             print(f"Num soft clauses: {len(numbers)}")
             # print(f"Nums at end: {n_s_solved[1]}{f' and {n_s_solved[0]}' if len(n_s_solved[0]) < 10 else ''}")
-            print(f"Payoff {len(numbers) - int(n_s_solved[1])}")
+            print(f"Sum of cost of used resources {int(n_s_solved[1])}")
         print("---")
         # print("\nENDING EXTERNAL SOLVER")
         # print_solution_path(e)
@@ -159,7 +163,7 @@ def harden_clauses(data, num_soft_clauses):
     info_vars = data[0].split()
     num_vars = info_vars[2]
     num_hard_clauses = int(info_vars[3])
-    total_num_clauses = int(info_vars[3]) + num_soft_clauses
+    total_num_clauses = num_hard_clauses + num_soft_clauses
     weight_of_hard_clauses = total_num_clauses
 
     data[0] = f"p wcnf {num_vars} {total_num_clauses} {weight_of_hard_clauses}\n"
@@ -672,7 +676,7 @@ def main(given_path):
 
 
 if __name__ == "__main__":
-    path = "/home/josua/Development/Satmas/tests/paper/opt8a8r_1.yml"
+    path = "/home/josua/Development/Satmas/tests/paper/opt12a12r_1.yml"
     if len(sys.argv) >= 2:
         path = sys.argv[1]
     print(path.split("/").pop())
