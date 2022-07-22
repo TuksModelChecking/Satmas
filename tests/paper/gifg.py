@@ -385,8 +385,8 @@ def main(fair, obs, generate, ispl_file, gdp_file):
             $ python3 gifg.py -g model_name.txt 3
             (Generates a template file with 3 agents. User must manually define rest of GDP in model_name.txt)\n
             or\n
-            $ python3 gifg.py -g model_name.txt 3..5,7,2..7,2..7
-            (Generate GDP model with 3 to 5 agents, 7 resources, and (for each agent) a demand within the range [2,7]. User must open file to set formulae to check)\n
+            $ python3 gifg.py -g model_name.txt 11 3..5,7,2..7,2..7
+            (Generate GDP model with k of 11 and with 3 to 5 agents, 7 resources, and (for each agent) a demand within the range [2,7]. User must open file to set formulae to check)\n
         then\n
         ISPL generation:\n
             $ python3 gifg.py -gdp model_name.txt -o -f -ispl m13.ispl
