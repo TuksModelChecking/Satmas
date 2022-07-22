@@ -44,6 +44,10 @@ M = MRA(
 )
 
 
+INCREMENTAL_SOFT_CLAUSE_COST = True
+PRINT_FULL_SOLUTION = False
+
+
 @dataclass
 class Problem:
     mra: MRA
@@ -107,12 +111,13 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
 
         dimacs = str(expr2dimacscnf(e)[1]).split("\n")
         numbers = extract_var_numbers(e.encode_cnf()[0], "nu_r")
-        print("NUMBERS!!")
+        print("AUX Variable Name Number Pairs:")
         print(numbers)
         count = 1
         for n in numbers:
             dimacs.append(f"{count} {n} 0\n")
-            count += 1
+            if INCREMENTAL_SOFT_CLAUSE_COST:
+                count += 1
         wdimacs = harden_clauses(dimacs, len(numbers))
         file = open("dimacs.txt", "w")
         file.writelines(wdimacs)
@@ -123,7 +128,8 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         p = subprocess.run(['./open-wbo_release', 'dimacs.txt'], stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
 
-        print(str(p.stdout))
+        if PRINT_FULL_SOLUTION:
+            print(str(p.stdout))
         wbo_printout = str(p.stdout).split("\\ns")
         s = wbo_printout.pop()[1:14]
         print(s)
@@ -676,7 +682,9 @@ def main(given_path):
 
 
 if __name__ == "__main__":
-    path = "/home/josua/Development/Satmas/tests/paper/opt12a12r_1.yml"
+    INCREMENTAL_SOFT_CLAUSE_COST = True
+    PRINT_FULL_SOLUTION = False
+    path = "/home/josua/Development/Satmas/tests/paper/opt8a8r_1.yml"
     if len(sys.argv) >= 2:
         path = sys.argv[1]
     print(path.split("/").pop())
