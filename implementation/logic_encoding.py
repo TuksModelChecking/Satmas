@@ -116,7 +116,7 @@ def gdb_basic_solver(mra: MRA, k_low: int, k_high: int) -> bool:
         print("---")
         print("STARTING EXTERNAL SOLVER")
         solve_start = time.perf_counter()
-        p = subprocess.run(['../lib/open-wbo-master-2022-12-16/open-wbo_release', 'dimacs.txt'], stdout=subprocess.PIPE,
+        p = subprocess.run(['../lib/open-wbo-master-2022-12-16/open-wbo', 'dimacs.txt'], stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
 
         if PRINT_FULL_SOLUTION:
