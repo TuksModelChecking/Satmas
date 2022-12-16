@@ -104,12 +104,12 @@ def solve_pico(mra: MRA, k_low: int, k_high: int) -> bool:
             print("MRA is known to be unsolvable")
             return False
         encoding_end = time.perf_counter()
-        solve_start = time.perf_counter()
 
         print("---")
         print("STARTING OLD SOLVER")
+        solve_start = time.perf_counter()
 
-        solved = e.satisfy_one()
+        solved = solve(e)
 
         solve_end = time.perf_counter()
         print(f"    s_t = {round(solve_end - solve_start, 1)}s\n      sat: {'TRUE' if solved else 'false'}")
