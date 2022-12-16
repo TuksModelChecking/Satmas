@@ -1,6 +1,8 @@
 # Satmas
 
-To test the base coalition vs opposition synthesis implementation do the following:
+Use the main branch for the optimal strategy synthesis. 
+
+To use the base coalition vs. opposition synthesis do the following:
 
 1. Clone this repo
 2. Pick a SAT solver to use (CaDiCal, OpenWBO or PicoSAT). CaDiCal should be the fastest.
@@ -8,3 +10,5 @@ To test the base coalition vs opposition synthesis implementation do the followi
 4. Follow the readme in the selected branch to install the selected solver
 5. cd into the implementation folder and run the following command to test any of the selected implementations
 6. run a test using the command ```python3 logic_encoding.py /full/path/to/input/testfile.yaml```
+
+
