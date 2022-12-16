@@ -45,7 +45,7 @@ M = MRA(
 
 
 INCREMENTAL_SOFT_CLAUSE_COST = True
-PRINT_FULL_SOLUTION = False
+PRINT_FULL_SOLUTION = True
 
 
 @dataclass
@@ -93,7 +93,7 @@ class NumberBinaryNumberPair:
         return total
 
 
-def solve_pico(mra: MRA, k_low: int, k_high: int) -> bool:
+def solve_cadical(mra: MRA, k_low: int, k_high: int) -> bool:
     total_encoding_time = 0
     total_solving_time = 0
     for k in range(k_low, k_high):
@@ -104,19 +104,30 @@ def solve_pico(mra: MRA, k_low: int, k_high: int) -> bool:
             print("MRA is known to be unsolvable")
             return False
         encoding_end = time.perf_counter()
-        solve_start = time.perf_counter()
 
+        dimacs = str(expr2dimacscnf(e)[1])
+
+        file = open("dimacs_cadical.txt", "w")
+        file.writelines(dimacs)
+        file.close()
         print("---")
-        print("STARTING OLD SOLVER")
+        print("STARTING EXTERNAL CADICAL SOLVER")
 
-        solved = e.satisfy_one()
+        solve_start = time.perf_counter()
+        p = subprocess.run(['../lib/cadical-rel-1.5.3/build/cadical', "dimacs_cadical.txt"], stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+
+        wbo_printout = str(p.stdout).split("\\ns")
+        s = wbo_printout.pop()[1:12]
+        solved = s == "SATISFIABLE"
+        print("\nENDING EXTERNAL SOLVER")
 
         solve_end = time.perf_counter()
         print(f"    s_t = {round(solve_end - solve_start, 1)}s\n      sat: {'TRUE' if solved else 'false'}")
         total_encoding_time += encoding_end - encoding_start
         total_solving_time += solve_end - solve_start
         if solved:
-            print_solution_path(e)
+            # print(f"    ...solved at bound k = {k}")
             break
     print(f"\nTotal Encoding Time: {round(total_encoding_time, 1)}s")
     print(f"Total Solving Time: {round(total_solving_time, 1)}s")
@@ -630,7 +641,7 @@ def encode_aux_resource_cost_variables(mra: MRA, k: int) -> And:
 def main(given_path):
     # start = time.perf_counter()
     problem = read_in_mra(given_path)
-    return solve_pico(problem.mra, problem.k, problem.k + 1)
+    return solve_cadical(problem.mra, problem.k, problem.k + 1)
 
 
 if __name__ == "__main__":
