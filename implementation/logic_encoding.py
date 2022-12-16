@@ -110,15 +110,15 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         # print("STARTING DIMACS ENCODING")
 
         dimacs = str(expr2dimacscnf(e)[1]).split("\n")
-        numbers = extract_var_numbers(e.encode_cnf()[0], "nu_r")
-        print("AUX Variable Name Number Pairs:")
-        print(numbers)
-        count = 1
-        for n in numbers:
-            dimacs.append(f"{count} {n} 0\n")
-            if INCREMENTAL_SOFT_CLAUSE_COST:
-                count += 1
-        wdimacs = harden_clauses(dimacs, len(numbers))
+        # numbers = extract_var_numbers(e.encode_cnf()[0], "nu_r")
+        # print("AUX Variable Name Number Pairs:")
+        # print(numbers)
+        # count = 1
+        # for n in numbers:
+        #     dimacs.append(f"{count} {n} 0\n")
+        #     if INCREMENTAL_SOFT_CLAUSE_COST:
+        #         count += 1
+        wdimacs = harden_clauses(dimacs)
         file = open("dimacs.txt", "w")
         file.writelines(wdimacs)
         file.close()
@@ -137,7 +137,7 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
         if solved:
             # print(wbo_printout)
             n_s_solved = wbo_printout.pop().split("\\no ")[-2:]
-            print(f"Num soft clauses: {len(numbers)}")
+            # print(f"Num soft clauses: {len(numbers)}")
             # print(f"Nums at end: {n_s_solved[1]}{f' and {n_s_solved[0]}' if len(n_s_solved[0]) < 10 else ''}")
             print(f"Sum of cost of used resources {int(n_s_solved[1])}")
         print("---")
@@ -165,11 +165,11 @@ def extract_var_numbers(name_number_map, var_name="_g_a") -> dict:
     return numbers
 
 
-def harden_clauses(data, num_soft_clauses):
+def harden_clauses(data):
     info_vars = data[0].split()
     num_vars = info_vars[2]
     num_hard_clauses = int(info_vars[3])
-    total_num_clauses = num_hard_clauses + num_soft_clauses
+    total_num_clauses = num_hard_clauses
     weight_of_hard_clauses = total_num_clauses
 
     data[0] = f"p wcnf {num_vars} {total_num_clauses} {weight_of_hard_clauses}\n"
@@ -296,8 +296,8 @@ def encode_mra(mra: MRA, k: int) -> And:
         encode_goal_reachability_formula(mra.agt, mra.num_agents_plus(), k),
         encode_m_k(mra, k),
         encode_protocol(mra.agt, mra.num_agents_plus(), k),
-        encode_aux_resource_cost_variables(mra, k),
-        encode_frequency_optimization(mra, k)
+        # encode_aux_resource_cost_variables(mra, k),
+        # encode_frequency_optimization(mra, k)
     )
     if str(mra_encoded) == "0":
         return False
