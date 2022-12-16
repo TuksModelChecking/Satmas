@@ -114,7 +114,7 @@ def gdb_basic_solver(mra: MRA, k_low: int, k_high: int) -> bool:
         file.close()
         print("DIMACS ENCODING DONE")
         print("---")
-        print("STARTING EXTERNAL SOLVER")
+        print("STARTING OPEN_WBO SOLVER")
         solve_start = time.perf_counter()
         p = subprocess.run(['../lib/open-wbo-master-2022-12-16/open-wbo', 'dimacs.txt'], stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
@@ -127,7 +127,7 @@ def gdb_basic_solver(mra: MRA, k_low: int, k_high: int) -> bool:
         solved = s == "OPTIMUM FOUND"
 
         print("---")
-        print("\nENDING EXTERNAL SOLVER")
+        print("\nENDING OPEN_WBO SOLVER")
         solve_end = time.perf_counter()
         print(f"    s_t = {round(solve_end - solve_start, 1)}s\n      sat: {'TRUE' if solved else 'false'}")
         total_encoding_time += encoding_end - encoding_start
