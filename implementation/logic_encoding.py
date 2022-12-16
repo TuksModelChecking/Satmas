@@ -93,8 +93,7 @@ class NumberBinaryNumberPair:
         return total
 
 
-def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
-    # print("\nITERATIVE SOLVING~")
+def solve_pico(mra: MRA, k_low: int, k_high: int) -> bool:
     total_encoding_time = 0
     total_solving_time = 0
     for k in range(k_low, k_high):
@@ -105,58 +104,21 @@ def iterative_solve(mra: MRA, k_low: int, k_high: int) -> bool:
             print("MRA is known to be unsolvable")
             return False
         encoding_end = time.perf_counter()
-        # print(f"k = {k}\n    e_t = {round(encoding_end - encoding_start, 1)}s")
         solve_start = time.perf_counter()
-        # print("STARTING DIMACS ENCODING")
 
-        # dimacs = str(expr2dimacscnf(e)[1]).split("\n")
-        # # numbers = extract_var_numbers(e.encode_cnf()[0], "nu_r")
-        # # print("AUX Variable Name Number Pairs:")
-        # # print(numbers)
-        # # count = 1
-        # # for n in numbers:
-        # #     dimacs.append(f"{count} {n} 0\n")
-        # #     if INCREMENTAL_SOFT_CLAUSE_COST:
-        # #         count += 1
-        # wdimacs = harden_clauses(dimacs)
-        # file = open("dimacs.txt", "w")
-        # file.writelines(wdimacs)
-        # file.close()
-        # print("DIMACS ENCODING DONE")
         print("---")
-        print("STARTING EXTERNAL SOLVER")
-
-        # p = subprocess.run(['./open-wbo_release', 'dimacs.txt'], stdout=subprocess.PIPE,
-        #                    stderr=subprocess.PIPE)
-        #
-        # if PRINT_FULL_SOLUTION:
-        #     print(str(p.stdout))
-        # wbo_printout = str(p.stdout).split("\\ns")
-        # s = wbo_printout.pop()[1:14]
-        # print(s)
-        # solved = s == "OPTIMUM FOUND"
+        print("STARTING OLD SOLVER")
 
         solved = e.satisfy_one()
 
-        # if solved:
-        #     # print(wbo_printout)
-        #     n_s_solved = wbo_printout.pop().split("\\no ")[-2:]
-        #     # print(f"Num soft clauses: {len(numbers)}")
-        #     # print(f"Nums at end: {n_s_solved[1]}{f' and {n_s_solved[0]}' if len(n_s_solved[0]) < 10 else ''}")
-        #     print(f"Sum of cost of used resources {int(n_s_solved[1])}")
-        # print("---")
-        # # print("\nENDING EXTERNAL SOLVER")
-        # # print_solution_path(e)
-        # #
-        # # solved = solve(e)
         solve_end = time.perf_counter()
         print(f"    s_t = {round(solve_end - solve_start, 1)}s\n      sat: {'TRUE' if solved else 'false'}")
         total_encoding_time += encoding_end - encoding_start
         total_solving_time += solve_end - solve_start
         if solved:
-            # print(f"    ...solved at bound k = {k}")
+            print_solution_path(e)
             break
-    # print(f"\nTotal Encoding Time: {round(total_encoding_time, 1)}s")
+    print(f"\nTotal Encoding Time: {round(total_encoding_time, 1)}s")
     print(f"Total Solving Time: {round(total_solving_time, 1)}s")
     return solved
 
@@ -167,20 +129,6 @@ def extract_var_numbers(name_number_map, var_name="_g_a") -> dict:
         if str(k).__contains__(var_name) and not str(k).__contains__("~"):
             numbers[name_number_map[k]] = k
     return numbers
-
-
-def harden_clauses(data):
-    info_vars = data[0].split()
-    num_vars = info_vars[2]
-    num_hard_clauses = int(info_vars[3])
-    total_num_clauses = num_hard_clauses
-    weight_of_hard_clauses = total_num_clauses
-
-    data[0] = f"p wcnf {num_vars} {total_num_clauses} {weight_of_hard_clauses}\n"
-    for i in range(1, int(num_hard_clauses) + 1):
-        data[i] = f"{weight_of_hard_clauses} {data[i]}\n"
-
-    return data
 
 
 def print_solution_path(e):
@@ -682,7 +630,7 @@ def encode_aux_resource_cost_variables(mra: MRA, k: int) -> And:
 def main(given_path):
     # start = time.perf_counter()
     problem = read_in_mra(given_path)
-    return iterative_solve(problem.mra, problem.k, problem.k + 1)
+    return solve_pico(problem.mra, problem.k, problem.k + 1)
 
 
 if __name__ == "__main__":
