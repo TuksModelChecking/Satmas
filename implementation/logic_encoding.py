@@ -106,7 +106,7 @@ def solve_pico(mra: MRA, k_low: int, k_high: int) -> bool:
         encoding_end = time.perf_counter()
 
         print("---")
-        print("STARTING OLD SOLVER")
+        print("STARTING PICO SOLVER")
         solve_start = time.perf_counter()
 
         solved = solve(e)
@@ -115,6 +115,7 @@ def solve_pico(mra: MRA, k_low: int, k_high: int) -> bool:
         print(f"    s_t = {round(solve_end - solve_start, 1)}s\n      sat: {'TRUE' if solved else 'false'}")
         total_encoding_time += encoding_end - encoding_start
         total_solving_time += solve_end - solve_start
+        print("PICO SOLVER DONE")
         if solved:
             print_solution_path(e)
             break
