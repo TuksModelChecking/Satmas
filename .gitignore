@@ -1,2 +1,5 @@
 .idea/
 tests/open-wbo_static
+.DS_Store
+open-wbo_static
+__pycache__
