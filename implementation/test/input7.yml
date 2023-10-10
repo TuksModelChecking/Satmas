@@ -1,0 +1,80 @@
+agents:
+  - a1
+  - a2
+  - a3
+  - a4
+  - a5
+  - a6
+  - a7
+
+resources:
+  - r1
+  - r2
+  - r3
+  - r4
+  - r5
+  - r6 
+  - r7
+  - r8
+  - r9 
+  - r10
+  - r11
+
+coalition: 
+  - a1 
+  - a2
+  - a3
+  - a4
+
+k: 16
+
+a1:
+  demand: 1
+  access:
+  - r1
+  - r2
+  - r3
+
+a2:
+  demand: 3
+  access:
+  - r1
+  - r2
+  - r3
+
+a3:
+  demand: 2
+  access:
+  - r1
+  - r3
+  - r7
+
+a4:
+  demand: 1
+  access:
+  - r4
+  - r5
+  - r6
+
+a5:
+  demand: 3
+  access:
+  - r4
+  - r5
+  - r6
+  - r7
+
+a6:
+  demand: 2
+  access:
+    - r4
+    - r5
+    - r7
+
+a7:
+  demand: 2
+  access:
+    - r7
+    - r9
+    - r10
+    - r11

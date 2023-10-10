@@ -1,0 +1,182 @@
+agents:
+  - a1
+  - a2
+  - a3
+  - a4
+  - a5
+  - a6
+  - a7
+  - a8
+  - a9
+  - a10
+  - a11
+  - a12
+  - a13
+  - a14
+  - a15
+  - a16
+  - a17
+  - a18
+
+resources:
+  - r1
+  - r2
+  - r3
+  - r4
+  - r5
+  - r6
+  - r7
+  - r8
+  - r9 
+  - r10
+  - r11
+  - r12
+
+coalition: 
+  - a1 
+  - a2
+  - a3
+  - a4
+  - a5
+  - a6
+  - a7
+  - a8
+  - a9
+  - a10
+  - a11
+  - a12
+  - a13
+  - a14
+  - a15
+  - a16
+  - a17
+  - a18
+
+k: 16
+
+a1:
+  demand: 3
+  access:
+    - r1
+    - r2
+    - r3
+
+a2:
+  demand: 1
+  access:
+    - r3
+    - r4
+    - r5
+
+a3:
+  demand: 3
+  access:
+    - r5
+    - r6
+    - r7
+      
+a4:
+  demand: 1
+  access:
+    - r7
+    - r8
+    - r9
+
+a5:
+  demand: 3
+  access:
+    - r9
+    - r10
+    - r11
+  
+a6:
+  demand: 1
+  access:
+    - r11
+    - r12
+    - r1
+
+a7:
+  demand: 3
+  access:
+    - r13
+    - r14
+    - r15
+
+a8:
+  demand: 1
+  access:
+    - r15
+    - r16
+    - r17
+
+a9:
+  demand: 3
+  access:
+    - r17
+    - r18
+    - r19
+      
+a10:
+  demand: 1
+  access:
+    - r19
+    - r20
+    - r21
+
+a11:
+  demand: 3
+  access:
+    - r15
+    - r16
+    - r18
+  
+a12:
+  demand: 1
+  access:
+    - r13
+    - r19
+    - r21
+
+a13:
+  demand: 3
+  access:
+    - r13
+    - r22
+    - r23
+    - r24
+
+a14:
+  demand: 1
+  access:
+    - r25
+    - r26
+    - r27
+
+a15:
+  demand: 3
+  access:
+    - r28
+    - r29
+    - r30
+      
+a16:
+  demand: 1
+  access:
+    - r27
+    - r28
+    - r30
+
+a17:
+  demand: 3
+  access:
+    - r25
+    - r26
+    - r29
+  
+a18:
+  demand: 1
+  access:
+    - r25
+    - r27
+    - r28

@@ -4,7 +4,6 @@ from yaml import SafeLoader
 import click
 from random import randrange
 
-
 class ISPLGenerator:
     def __init__(self, gdp, ispl_file, fair, obs):
         self.tab_depth = 0
