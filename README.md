@@ -1,14 +1,15 @@
-# Satmas
+# Satmas - Epsilon Nash Equilibrium Extension
 
-Use the main branch for the optimal strategy synthesis. 
-
-To use the base coalition vs. opposition synthesis do the following:
+The implementation supports two algorithms, an iterative one and a direct one. The tool does rely on the open-wbo Max-SAT solver and does assume the executable
+called 'open-wbo_static' is available in the implementation directory.
+To run the code follow the steps below:
 
 1. Clone this repo
-2. Pick a SAT solver to use (CaDiCal, OpenWBO or PicoSAT). CaDiCal should be the fastest.
-3. Checkout the branch of the solver you want to use (CaDiCal is on the ```feedback_cadical``` branch, OpenWBO is on the ```feedback_open_gdb``` branch, and PicoSAT is on the ```feedback_old_solver``` branch)
-4. Follow the readme in the selected branch to install the selected solver
-5. cd into the implementation folder and run the following command to test any of the selected implementations
-6. run a test using the command ```python3 logic_encoding.py /full/path/to/input/testfile.yaml```
+2. Copy the open-wbo_static executable to the implementation folder.
+3. Checkout the branch of the solver you want to use (epsilon-nah)
+4. cd into the implementation folder and run the following command to test any of the selected implementations
+5. Install project dependencies with ``` pip install -r requirements.txt ```
+6. To execute the program you can run ``` python3 main.py -m iepne -s ./path/to/scenario.yml ```, this will execute the iterative algorithm, to run the direct 
+algorithm pass the ``` -m wepne ``` as a flag.
 
 
