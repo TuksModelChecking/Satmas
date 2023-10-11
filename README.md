@@ -6,8 +6,8 @@ To run the code follow the steps below:
 
 1. Clone this repo
 2. Copy the open-wbo_static executable to the implementation folder.
-3. Checkout the branch of the solver you want to use (epsilon-nah)
-4. cd into the implementation folder and run the following command to test any of the selected implementations
+3. Checkout the branch of the solver you want to use (epsilon-nash)
+4. cd into the implementation folder.
 5. Install project dependencies with ``` pip install -r requirements.txt ```
 6. To execute the program you can run ``` python3 main.py -m iepne -s ./path/to/scenario.yml ```, this will execute the iterative algorithm, to run the direct 
 algorithm pass the ``` -m wepne ``` as a flag.

@@ -184,7 +184,6 @@ def find_epsilon_ne(problem: Problem, epsilon_policy):
         res,found_better = solve_for_agent_epsilon_ne(problem, prev_strategy_profile, prev_goal_map)
 
         if found_better == False:
-            print(f"HERE!!!!")
             return True, prev_strategy_profile, initial_goal_map, prev_goal_map, res, iterations, past_strategy_payoffs
 
         print(f"Weights: {res}")
@@ -203,15 +202,13 @@ def find_epsilon_ne(problem: Problem, epsilon_policy):
         
         if iterations > 1:
             for agt in problem.mra.agt:
-                print(prev_goal_map, past_strategy_payoffs[iterations-1])
                 fractions = calculate_fraction_vector(initial_goal_map, prev_goal_map)
                 prev_fractions = calculate_fraction_vector(initial_goal_map, past_strategy_payoffs[iterations-1])
                 epsilon = epsilon_policy(fractions)
                 prev_epsilon = epsilon_policy(prev_fractions)
 
                 if epsilon >= prev_epsilon:
-                    print(f"Due to epsilon: {epsilon} >= {prev_epsilon}")
-                    return False, {}, initial_goal_map, past_strategy_payoffs[iterations-1], weight_maps[iterations-1], iterations, past_strategy_payoffs
+                    return False, {}, initial_goal_map, prev_goal_map, weight_map, iterations, past_strategy_payoffs
         else:
             past_strategies.append(prev_strategy_profile)
             past_strategy_payoffs.append(prev_goal_map)
