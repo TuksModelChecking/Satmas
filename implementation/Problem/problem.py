@@ -3,7 +3,7 @@
 """
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
 from yaml import SafeLoader
 from yaml import load
 
@@ -37,7 +37,7 @@ class Problem:
     Returns MRA instance
 """
 def read_in_mra(ymal_path: str):
-    yml_data = load(open(ymal_path, "r"), Loader=SafeLoader)
+    yml_data: Dict = load(open(ymal_path, "r"), Loader=SafeLoader)
     agents = []
     resources: set = set()
     for a_name in yml_data["agents"]:
@@ -59,8 +59,3 @@ def read_in_mra(ymal_path: str):
         k=int(yml_data["k"])
     )
 
-M = MRA(
-    agt=[],
-    res=[],
-    coalition=[]
-)

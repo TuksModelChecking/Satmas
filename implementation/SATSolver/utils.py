@@ -4,7 +4,7 @@
 
 from typing import List
 from dataclasses import dataclass
-from SATSolver.logic_encoding import split_by_timestep_group
+from SATSolver.logic_encoding import action_as_words, split_by_timestep_group
 from SATSolver.logic_encoding import group_by_assignment, State
 
 @dataclass

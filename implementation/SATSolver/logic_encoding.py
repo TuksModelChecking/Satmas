@@ -1,24 +1,13 @@
 import math
-import sys
-import time
-import subprocess
-from multiprocessing import Pool, Manager
-from concurrent.futures import ThreadPoolExecutor
-
 from dataclasses import dataclass
 from typing import Tuple, List, Dict
 from itertools import product
 
-from yaml import SafeLoader
-from yaml import load
 from pyeda.inter import *
-
 from pyeda.boolalg.expr import expr2dimacscnf
 
 from Problem.agent import Agent, AgentAlias
 from Problem.problem import MRA
-
-# TODO: fix bug where encoding of resources is based on number of resources, instead of explicitly defined resources
 
 # Let "Paper" be used to denote the SMBF2021 submission by Nils Timm and Josua Botha
 # Let "Paper 2" be used to denote the follow-up journal paper, by the same authors.
@@ -67,7 +56,7 @@ def encode_mra_with_strategy(mra: MRA, k: int, agents: List[Agent], fix_agent: i
         encode_m_k(mra, k),
         encode_protocol_temp(mra.agt, mra.num_agents_plus(), mra.num_resources(), k),
         encode_frequency_optimization(mra, k, fix_agent),
-        encode_strategy_profile(agents, fix_agent, strategy_profile, mra.num_agents_plus(), mra.num_resources(), k)
+        encode_fixed_strategy_profile(agents, fix_agent, strategy_profile, mra.num_agents_plus(), mra.num_resources(), k)
     )
     
     if str(mra_encoded) == "0":
@@ -418,12 +407,11 @@ def encode_agent_protocol_temp(a: Agent, agents: List[Agent], num_agents: int, n
         )
     )
 
-def all_agent_resources_not_unassigned(a: Agent, total_num_agents: int, t: int) -> And():
+def all_agent_resources_not_unassigned(a: Agent, total_num_agents: int, t: int) -> And:
     to_conjunct = []
     for r in a.acc:
         to_conjunct.append(Not(encode_resource_state(r, 0, t, total_num_agents)))
     return And(*to_conjunct)
-
 
 # By Definition 13 in Paper
 def encode_evolution(m: MRA, t: int) -> And:
@@ -652,14 +640,11 @@ def h_get_all_possible_actions_for_state_observation(agent: Agent, state_observa
         
     return actions
 
-def encode_strategy_profile(agents: List[Agent], fix_agent: int, strategy_profile: Dict[int, List[Tuple[List[State], str]]], total_num_agents: int, total_num_resources: int, k: int) -> And:
+def encode_fixed_strategy_profile(agents: List[Agent], fix_agent: int, strategy_profile: Dict[int, List[Tuple[List[State], str]]], total_num_agents: int, total_num_resources: int, k: int) -> And:
     to_conjunct = []
     
-    print(f"Searching for alternate strategy for Agent ID: {fix_agent}")
-
     for agent in agents:
         if agent.id != fix_agent and agent.id in strategy_profile:
-            print(f"Fixing Agent ID: {agent.id}")
             strategy = strategy_profile[agent.id]
             to_conjunct.append(
                 encode_strategy(agent, strategy, total_num_agents, total_num_resources, k)

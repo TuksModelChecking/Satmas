@@ -1,19 +1,19 @@
 from Problem.problem import Problem
-from SATSolver.solver import iterative_solve
+from SATSolver.solver import run_solver_for_mra
 from SATSolver.logic_encoding import get_strategy_profile, encode_mra, encode_mra_with_strategy, h_get_all_observed_resource_states, h_get_all_possible_actions_for_state_observation, state_observation_to_string
-from NE.utils import h_calculate_weight_update, h_choose_action_greedy, h_choose_action_idle, h_build_full_strategy, h_build_variable_agent_weight_map, h_count_relall, h_calculate_improvement, ratios
+from NE.utils import h_choose_action_greedy, h_choose_action_idle, h_build_full_strategy, h_build_variable_agent_weight_map, h_count_relall, h_calculate_improvement, ratios
 
 import math
-import scipy.stats as ss
 
 # Find NE algorithm described in Paper 2
-def find_ne(problem: Problem):
+def find_ne(problem: Problem) -> bool:
     # Encode Problem for solver
     encoding = encode_mra(problem.mra, problem.k) 
 
     # Perform initial solve
-    satisfied, var_assignment_map = iterative_solve(problem.mra, encoding)
+    satisfied, var_assignment_map = run_solver_for_mra(problem.mra, encoding)
 
+    # If not satisfied a nash equilibrium for the mra scenario does not exist
     if not satisfied:
         return False
 
@@ -57,7 +57,7 @@ def find_ne(problem: Problem):
             )
         
             # Solve
-            satisfied, vam = iterative_solve(problem.mra, encoding_strat, problem.k, problem.k+1)
+            satisfied, vam = run_solver_for_mra(problem.mra, encoding_strat, problem.k, problem.k+1)
 
             # Extract new strategy profile
             (curr_strategy_profile, _, curr_goal_map) = get_strategy_profile(problem, vam)
@@ -85,7 +85,7 @@ def run_solve(problem, agent_not_fix_id, strategy_profile, goal_weight_map):
             strategy_profile
         )
 
-    satisfied, vam = iterative_solve(problem.mra, encoding, goal_weight_map=goal_weight_map)
+    satisfied, vam = run_solver_for_mra(problem.mra, encoding, goal_weight_map=goal_weight_map)
 
     if not satisfied:
         return None, None
@@ -144,17 +144,6 @@ def lhs_val(num):
     num_digits = math.ceil(math.log10(num))
     lhs_digit = math.floor(num / (10^(num_digits-1)))
     return lhs_digit * (10^(num_digits-1))
-
-def select_fair_strategy(past_strategy_payoffs):
-    dist = []
-    for payoff in past_strategy_payoffs:
-        values = payoff.values()
-        min_payoff = min(values)
-        max_payoff = max(values)
-
-        dist.append(abs(max_payoff - min_payoff))
-
-    return dist.index(min(dist))
 
 def find_epsilon_ne(problem: Problem, epsilon_policy, iterations):
     print("------------------ Initial Strategy Synthesis ------------------")

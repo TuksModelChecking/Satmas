@@ -32,16 +32,3 @@ def run_solver(problem: Problem, agent_not_fix_id: int = -1, strategy_profile = 
     (curr_strategy_profile, _, curr_goal_map) = get_strategy_profile(problem, vam)
 
     return curr_strategy_profile, curr_goal_map
-
-def run_solver_temp(problem: Problem, agent_not_fix_id: int = -1, strategy_profile = {}, goal_weight_map = {}):
-    encoding = encode_mra_simple(problem.mra, problem.k)
-
-    satisfied, vam = iterative_solve(problem.mra, encoding, problem.k, problem.k+1, goal_weight_map=goal_weight_vars)
-
-    if not satisfied:
-        return None, None
-
-    # Extract new strategy profile
-    (curr_strategy_profile, _, curr_goal_map) = get_strategy_profile(problem, vam)
-        
-    return curr_strategy_profile, curr_goal_map

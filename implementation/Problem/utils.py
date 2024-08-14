@@ -9,7 +9,7 @@ def h_get_agent_with_resource(rid: int, agentID: int, agents: List[Agent]):
             agent_ids.append(agent.id)
     return agent_ids
 
-def action_availability_protocol(state_observation: tuple, agent: Agent):
+def action_availability_protocol(state_observation: tuple, agent: Agent) -> List[str]:
     allocated_by_current_agt_count = 0
     num_allocations = 0
     actions = []
@@ -46,5 +46,5 @@ def h_get_all_possible_state_observations(mra: MRA):
 
         for possible_observation in possible_state_observations:
             # A given state observation may have one or more possible action that can be performed
-            actions = action_availability_protocol(possible_observation, kgent)
+            actions = action_availability_protocol(possible_observation, agent)
             print(f'Agent{agent.id} - {possible_observation} => {actions}')

@@ -1,16 +1,14 @@
 import subprocess
 import time
-from dataclasses import dataclass
 import subprocess
 
-from typing import Tuple, List, Dict
+from typing import Dict
 from pyeda.boolalg.expr import expr2dimacscnf
 
 from Problem.problem import MRA
-from SATSolver.logic_encoding import encode_mra, g_dimacs
-from SATSolver.utils import print_solution_path
+from SATSolver.logic_encoding import g_dimacs
 
-def iterative_solve(mra: MRA, encoding, goal_weight_map: Dict[str, int] = {}, dimacs_file_path: str = "dimacs.txt") -> bool:
+def run_solver_for_mra(mra: MRA, encoding, goal_weight_map: Dict[str, int] = {}, dimacs_file_path: str = "dimacs.txt") -> bool:
     total_encoding_time = 0
     total_solving_time = 0
     variable_assignment_map = {}
@@ -51,11 +49,13 @@ def iterative_solve(mra: MRA, encoding, goal_weight_map: Dict[str, int] = {}, di
     if not satisfied:
         return None
 
+    # Parse tool output to get variabale assignments
     assignments = str(p.stdout).split("\\nv")[1].strip().split(" ")[:-1]
     assignments = [int(str_num) for str_num in assignments]
 
     print(f' - SATISFIED: {satisfied}')
 
+    # Map the assignments to their variables
     if satisfied:
         variable_assignment_map = map_truth_assignments(vars_name_map, assignments)
 
@@ -63,50 +63,6 @@ def iterative_solve(mra: MRA, encoding, goal_weight_map: Dict[str, int] = {}, di
     print(f"s_t = {round(solve_end - solve_start, 1)}s")
 
     return satisfied, variable_assignment_map
-
-def iterative_solve_simple(mra: MRA, encoding, k: int):
-    cnf = expr2dimacscnf(encoding)
-    dimacs = str(cnf[1]).split("\n")
-    solver = MaxSATSolver("OLL")
-
-    file = open("dimacs.txt", "w")
-    file.writelines(dimacs)
-    file.close()
-
-    # Execute MaxSAT solver
-    assignments = solver.solve("dimacs.txt")
-    satisfied = len(assignments) > 0
-
-    print(f' - SATISFIED: {satisfied}')
-
-    if satisfied:
-        variable_assignment_map = map_truth_assignments(cnf[0], assignments)
-
-    return satisfied, variable_assignment_map
-
-def _parse_wbo_output(stdout):
-    output = str(stdout).split('\\n');
-
-    results = []
-
-    for row in output:
-        if row[0] == 'c': continue
-
-        if row[0] == 'o':
-            results.append(row[2])
-        
-        if row[0] == 's':
-            satisfied = row[2:15] == "OPTIMUM FOUND"
-            results.append(satisfied)
-            if not satisfied:
-                return [0,False,0]
-
-        if row[0] == 'v':
-            number_list = row[2:len(row)-2].split(" ")
-            truth_assignments = [int(num) for num in number_list]
-            results.append(truth_assignments)
-
-    return results
 
 def map_truth_assignments(var_name_map, truth_assignments):
     mappings = {}
