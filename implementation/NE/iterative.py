@@ -1,7 +1,7 @@
 from Problem.problem import Problem
 from SATSolver.solver import iterative_solve
 from SATSolver.logic_encoding import get_strategy_profile, encode_mra, encode_mra_with_strategy, h_get_all_observed_resource_states, h_get_all_possible_actions_for_state_observation, state_observation_to_string
-from NE.utils import h_calculate_weight_update, h_choose_action_greedy, h_choose_action_idle, h_build_full_strategy, h_build_variable_agent_weight_map, h_count_relall, h_calculate_improvement
+from NE.utils import h_calculate_weight_update, h_choose_action_greedy, h_choose_action_idle, h_build_full_strategy, h_build_variable_agent_weight_map, h_count_relall, h_calculate_improvement, ratios
 
 import math
 import scipy.stats as ss
@@ -12,7 +12,7 @@ def find_ne(problem: Problem):
     encoding = encode_mra(problem.mra, problem.k) 
 
     # Perform initial solve
-    satisfied, var_assignment_map = iterative_solve(problem.mra, encoding, problem.k, problem.k+1)
+    satisfied, var_assignment_map = iterative_solve(problem.mra, encoding)
 
     if not satisfied:
         return False
@@ -72,9 +72,11 @@ def find_ne(problem: Problem):
 
 def run_solve(problem, agent_not_fix_id, strategy_profile, goal_weight_map):
     encoding = None
-    if strategy_profile == {}:
+    if strategy_profile == None:
+        print("Running solver with no strategy profile")
         encoding = encode_mra(problem.mra, problem.k)
     else:
+        print("Running solve with strategy profile")
         encoding = encode_mra_with_strategy(
             problem.mra, 
             problem.k, 
@@ -83,7 +85,7 @@ def run_solve(problem, agent_not_fix_id, strategy_profile, goal_weight_map):
             strategy_profile
         )
 
-    satisfied, vam = iterative_solve(problem.mra, encoding, problem.k, problem.k+1, goal_weight_map=goal_weight_map)
+    satisfied, vam = iterative_solve(problem.mra, encoding, goal_weight_map=goal_weight_map)
 
     if not satisfied:
         return None, None
@@ -154,16 +156,22 @@ def select_fair_strategy(past_strategy_payoffs):
 
     return dist.index(min(dist))
 
-def find_epsilon_ne(problem: Problem, epsilon_policy):
+def find_epsilon_ne(problem: Problem, epsilon_policy, iterations):
     print("------------------ Initial Strategy Synthesis ------------------")
-    (prev_strategy_profile, prev_goal_map) = run_solve(problem, -1, {}, {})
+    (prev_strategy_profile, prev_goal_map) = run_solve(problem, -1, None, {})
 
+    if prev_strategy_profile == None:
+        print("Encoding is not satisifiable")
+        return
+
+    # Set initial goal map
     initial_goal_map = prev_goal_map
 
     print(f"Initial Goal Map: {prev_goal_map}")
     print()
 
-    # Build full strategy profile
+    # Build full strategy profile from encoding truth assignments
+    """
     for agt in problem.mra.agt:
         prev_strategy_profile[agt.id] = h_build_full_strategy(
             agt, 
@@ -171,57 +179,52 @@ def find_epsilon_ne(problem: Problem, epsilon_policy):
             h_get_all_observed_resource_states(agt, problem.mra.agt),
             h_choose_action_greedy
         )
+    """
 
     weight_map = {}
     past_strategies = [prev_strategy_profile]
     past_strategy_payoffs = [prev_goal_map]
     weight_maps = []
+    minEpsilon = 999
 
-    iterations = 0
-
-    while True:
+    for i in range(iterations):
+        print(f"------------------- Iteration {(i+1)}/{iterations} -------------------")
         # Search for alternate strategy, biased when weight_map is set
-        res,found_better = solve_for_agent_epsilon_ne(problem, prev_strategy_profile, prev_goal_map)
+        res,ratios,found_better = solve_for_agent_epsilon_ne(problem, prev_strategy_profile, prev_goal_map)
 
-        if found_better == False:
-            return True, prev_strategy_profile, initial_goal_map, prev_goal_map, res, iterations, past_strategy_payoffs
+        # Calculate epsilon
+        epsilon = epsilon_policy(ratios)
 
-        print(f"Weights: {res}")
-        weight_map = res
-        prev_strategy_profile = {}
-        prev_goal_map = {}
-        prev_strategy_profile, prev_goal_map = run_solve(problem, -1, {}, h_build_variable_agent_weight_map(problem, res))
+        # Search for minimum epsilon
+        if epsilon < minEpsilon:
+            minEpsilon = epsilon
 
+        # Run solve normally with the updated weight map
+        psp, pgp = run_solve(problem, -1, None, h_build_variable_agent_weight_map(problem, res))
+
+        # Fill out previous strategy profile(psp) with actions for all possible states
         for agt in problem.mra.agt:
-            prev_strategy_profile[agt.id] = h_build_full_strategy(
+            psp[agt.id] = h_build_full_strategy(
                 agt, 
-                prev_strategy_profile[agt.id], 
+                psp[agt.id], 
                 h_get_all_observed_resource_states(agt, problem.mra.agt),
-                h_choose_action_greedy
+                h_choose_action_idle,
             )
+
+        # Set 'new' previous strategy profile and goal map
+        prev_strategy_profile = psp
+        prev_goal_map = pgp
+
+        if prev_strategy_profile in past_strategies:
+            print("Same strategy")
+
+        past_strategies.append(psp)
         
-        if iterations > 1:
-            for agt in problem.mra.agt:
-                fractions = calculate_fraction_vector(initial_goal_map, prev_goal_map)
-                prev_fractions = calculate_fraction_vector(initial_goal_map, past_strategy_payoffs[iterations-1])
-                epsilon = epsilon_policy(fractions)
-                prev_epsilon = epsilon_policy(prev_fractions)
+        print(f"Ratios: {ratios}")
+        print(f"Epsilon: {epsilon}")
 
-                if epsilon >= prev_epsilon:
-                    return False, {}, initial_goal_map, prev_goal_map, weight_map, iterations, past_strategy_payoffs
-        else:
-            past_strategies.append(prev_strategy_profile)
-            past_strategy_payoffs.append(prev_goal_map)
-            weight_maps.append(res)
-
-        iterations += 1
-        print(f"New payoffs: {prev_goal_map}")
-
-def calculate_fraction_vector(initial_goal_map, prev_goal_map):
-    fractions = []
-    for agt_id in initial_goal_map:
-        fractions.append(initial_goal_map[agt_id] / prev_goal_map[agt_id])
-    return fractions
+    print(f"--- Done, min epsilon is {minEpsilon}")
+    return
 
 def solve_for_agent_epsilon_ne(problem, prev_strategy_profile, prev_goal_map):
     temp_weights = {}
@@ -229,16 +232,17 @@ def solve_for_agent_epsilon_ne(problem, prev_strategy_profile, prev_goal_map):
     temp_goal_map = {}
 
     for agt in problem.mra.agt:
+        # Run solver, by fixing the strategies of the other agents except for agt
         curr_strategy_profile, curr_goal_map = run_solve(problem, agt.id, prev_strategy_profile, {})
 
         if curr_goal_map[agt.id] > prev_goal_map[agt.id]:
             temp_goal_map[agt.id] = curr_goal_map[agt.id]
-            # curr_goal_map = h_count_relall(curr_strategy_profile, agt.id, curr_goal_map)
-            # print(f"Found Better: {curr_goal_map}")
             found_better = True
         else:
             temp_goal_map[agt.id] = prev_goal_map[agt.id]
+
+    r = ratios(prev_goal_map, temp_goal_map)
     
     temp_weights = h_calculate_improvement(prev_goal_map, temp_goal_map)
-    return temp_weights, found_better
+    return temp_weights, r, found_better
         

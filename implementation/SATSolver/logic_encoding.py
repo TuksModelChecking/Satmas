@@ -316,7 +316,7 @@ def encode_protocol_temp(agents: List[Agent], num_agents: int, num_resources: in
                     rels[t][a.id][r].append(
                         And(
                             encode_state_observation(state_observation, len(agents)+1, t),
-                            encode_strategic_decision(f"req{r}", state_observation, a, num_resources, t)
+                            encode_strategic_decision(f"rel{r}", state_observation, a, num_resources, t)
                         )
                     )
 

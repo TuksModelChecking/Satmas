@@ -2,16 +2,24 @@ agents:
   - a1
   - a2
   - a3
+  - a4
+  - a5
 
 resources:
   - r1
   - r2
   - r3
+  - r4
+  - r5 
+  - r6
+  - r7
 
 coalition:
   - a1
   - a2
   - a3
+  - a4
+  - a5
 
 k: 16
 
@@ -23,16 +31,31 @@ a1:
   - r3
 
 a2:
-  demand: 3
+  demand: 2
   access:
-    - r1
     - r2
     - r3
 
 a3:
-  demand: 1
+  demand: 2
   access:
-    - r1
     - r2
     - r3
+    - r4
+
+a4:
+  demand: 2
+  access:
+    - r2
+    - r3
+    - r4
+    - r5
+
+a5:
+  demand: 3
+  access:
+    - r1
+    - r5
+    - r6
+    - r7
 

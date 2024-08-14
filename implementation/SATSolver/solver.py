@@ -10,71 +10,58 @@ from Problem.problem import MRA
 from SATSolver.logic_encoding import encode_mra, g_dimacs
 from SATSolver.utils import print_solution_path
 
-def iterative_solve(mra: MRA, encoding, k_low: int, k_high: int, goal_weight_map: Dict[str, int] = {}, dimacs_file_path: str = "dimacs.txt") -> bool:
+def iterative_solve(mra: MRA, encoding, goal_weight_map: Dict[str, int] = {}, dimacs_file_path: str = "dimacs.txt") -> bool:
     total_encoding_time = 0
     total_solving_time = 0
     variable_assignment_map = {}
 
-    for k in range(k_low, k_low+1):
-        # Start Encoding Timer
-        encoding_start = time.perf_counter()
+    # Start Encoding Timer
+    encoding_start = time.perf_counter()
 
-        # Encode Problem as propositional logic formula
-        e = encoding
+    # Encode Problem as propositional logic formula
+    e = encoding
 
-        # Invalid configuration
-        if e is False:
-            print("MRA is known to be unsolvable")
-            return False
+    # Invalid configuration
+    if e is False:
+        print("MRA is known to be unsolvable")
+        return False
 
-        # Indicate end of encoding
-        encoding_end = time.perf_counter()
+    # Indicate end of encoding
+    encoding_end = time.perf_counter()
 
-        # Start solving MaxSAT problem
-        solve_start = time.perf_counter()
+    # Start solving MaxSAT problem
+    solve_start = time.perf_counter()
 
-        # Get DIMACS format from encoding
-        wdimacs,numbers,vars_name_map = g_dimacs(e, goal_weight_map)
+    # Get DIMACS format from encoding
+    wdimacs,numbers,vars_name_map = g_dimacs(e, goal_weight_map)
 
-        # Write to file
-        file = open("dimacs.txt", "w")
-        file.writelines(wdimacs)
-        file.close()
+    # Write to file
+    file = open("dimacs.txt", "w")
+    file.writelines(wdimacs)
+    file.close()
 
-        print("Done with encoding")
+    print("Done with encoding")
 
-        # Execute MaxSAT solver
-        """
-        assignments = solver.solve("dimacs.txt")
-        satisfied = len(assignments) > 0
-        """
+    # Execute MaxSAT solver
+    p = subprocess.run(['./open-wbo_static', 'dimacs.txt'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    wbo_printout = str(p.stdout).split("\\ns")
+    s = wbo_printout.pop()[1:14]
+    satisfied = s == "OPTIMUM FOUND"
 
-        p = subprocess.run(['./open-wbo_static', 'dimacs.txt'], stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
+    if not satisfied:
+        return None
 
-        wbo_printout = str(p.stdout).split("\\ns")
-        s = wbo_printout.pop()[1:14]
-        satisfied = s == "OPTIMUM FOUND"
+    assignments = str(p.stdout).split("\\nv")[1].strip().split(" ")[:-1]
+    assignments = [int(str_num) for str_num in assignments]
 
-        if not satisfied:
-            return None
+    print(f' - SATISFIED: {satisfied}')
 
-        assignments = str(p.stdout).split("\\nv")[1].strip().split(" ")[:-1]
-        assignments = [int(str_num) for str_num in assignments]
+    if satisfied:
+        variable_assignment_map = map_truth_assignments(vars_name_map, assignments)
 
-        print(f' - SATISFIED: {satisfied}')
+    solve_end = time.perf_counter()
+    print(f"s_t = {round(solve_end - solve_start, 1)}s")
 
-        if satisfied:
-            variable_assignment_map = map_truth_assignments(vars_name_map, assignments)
-
-        solve_end = time.perf_counter()
-        print(f"s_t = {round(solve_end - solve_start, 1)}s")
-
-        total_encoding_time += encoding_end - encoding_start
-        total_solving_time += solve_end - solve_start
-
-    # print(f"\nTotal Encoding Time: {round(total_encoding_time, 1)}s")
-    # print(f"Total Solving Time: {round(total_solving_time, 1)}s")
     return satisfied, variable_assignment_map
 
 def iterative_solve_simple(mra: MRA, encoding, k: int):

@@ -9,6 +9,12 @@ def h_calculate_improvement(prev_goal_map, curr_goal_map):
 def h_calculate_weight_update(prev_goal_map, curr_goal_map, weight_map):
     return None
 
+def ratios(prev_goal_map, curr_goal_map):
+    ratios = []
+    for agt_id in prev_goal_map:
+        ratios.append(curr_goal_map[agt_id] / prev_goal_map[agt_id])
+    return ratios
+
 def _proportional_scaling(prev_goal_map, curr_goal_map):
     ratios = []
     for agt_id in prev_goal_map:
@@ -88,11 +94,15 @@ def h_choose_action_idle(possible_actions):
     return ["idle"]
 
 def h_build_full_strategy(agent, strategy, all_state_observations, action_policy):
+    numNotIn = 0
     for state in all_state_observations:
         state_str = state_observation_to_string(state)
         if state_str not in strategy:
+            numNotIn += 1
             possible_actions = h_get_all_possible_actions_for_state_observation(agent, state)
             strategy[state_str] = action_policy(possible_actions)
+    if numNotIn == len(all_state_observations):
+        print("NOT IN EQUAL ----------------------")
     return strategy
 
 # Map the weight map to goal variables that will encoded

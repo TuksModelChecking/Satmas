@@ -4,3 +4,6 @@ tests/open-wbo_static
 open-wbo_static
 __pycache__
 *.sh
+bin
+include
+lib

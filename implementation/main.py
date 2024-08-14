@@ -34,6 +34,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-s', '--scenario')
     parser.add_argument('-m', '--method', choices=['ne', 'iepne', 'wepne', 'aepne'])
+    parser.add_argument('-i', '--iterations')
 
     args = parser.parse_args()
 
@@ -44,31 +45,10 @@ if __name__ == '__main__':
         find_ne(problem)
     elif args.method == 'iepne':
         start = time.perf_counter()
-        status, sp, initial_goal_map, prev_goal_map, weight_map, iterations, payoffs = find_epsilon_ne(problem, calculate_max_epsilon)
+        res = find_epsilon_ne(problem, calculate_max_epsilon, int(args.iterations))
         end = time.perf_counter()
-
-        fractions = []
-        for agt in problem.mra.agt:
-            fractions.append(initial_goal_map[agt.id] / prev_goal_map[agt.id])
-
-        print("-------------- Summary IEPNE ---------------")
-        print(f"Collectively optimal payoffs: {initial_goal_map}")
-        print(f"Epsilon NE payoffs: {prev_goal_map}")
-        print(f"Max Epsilon: {calculate_max_epsilon(fractions)}")
-        print(f"Avg Epsilon: {calculate_avg_epsilon(fractions)}")
-        print(f"Iterations: {iterations}")
-        print("Epsilon values over iterations")
-
-        counter = 0
-        for wm in payoffs:
-            if counter != 0:
-                fractions = []
-                for agt in problem.mra.agt:
-                    fractions.append(initial_goal_map[agt.id] / wm[agt.id])
-                print(f"\t{counter}: Max Epsilon: {calculate_max_epsilon(fractions)}")
-                print(f"\t{counter}: Avg Epsilon: {calculate_avg_epsilon(fractions)}")
-            counter += 1
-        
+        print(res)
+        exit(0)
     elif args.method == 'wepne':
         start = time.perf_counter()
         final_sp, wm, graph, gm, fraction_map = weighted_search.solve(problem)
