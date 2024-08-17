@@ -1,0 +1,14 @@
+{
+  "name": "ui",
+  "outputfilename": "ui",
+  "assetdir": "frontend/out",
+  "frontend:install": "yarn install",
+  "frontend:build": "yarn run export",
+  "frontend:dev:watcher": "yarn run dev",
+  "frontend:dev:serverUrl": "http://localhost:3000",
+  "wailsjsdir": "frontend/wailsjs",
+  "author": {
+    "name": "KyleSmith19091",
+    "email": "skorpion19091@gmail.com"
+  }
+}
