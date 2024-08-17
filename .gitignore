@@ -6,4 +6,6 @@ __pycache__
 *.sh
 bin
 include
-lib
+ui/node_modules
+implementation/lib
+*.d.ts

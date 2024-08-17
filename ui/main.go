@@ -23,7 +23,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:             "ui",
+		Title:             "SATMAS",
 		Width:             1024,
 		Height:            768,
 		MinWidth:          1024,
@@ -35,6 +35,8 @@ func main() {
 		Frameless:         false,
 		StartHidden:       false,
 		HideWindowOnClose: false,
+		CSSDragProperty:   "widows",
+		CSSDragValue:      "1",
 		BackgroundColour:  &options.RGBA{R: 255, G: 255, B: 255, A: 255},
 		Assets:            assets,
 		Menu:              nil,
@@ -59,18 +61,16 @@ func main() {
 		// Mac platform specific options
 		Mac: &mac.Options{
 			TitleBar: &mac.TitleBar{
-				TitlebarAppearsTransparent: true,
+				TitlebarAppearsTransparent: false,
 				HideTitle:                  false,
 				HideTitleBar:               false,
 				FullSizeContent:            false,
 				UseToolbar:                 false,
 				HideToolbarSeparator:       true,
 			},
-			Appearance:           mac.NSAppearanceNameDarkAqua,
-			WebviewIsTransparent: true,
-			WindowIsTranslucent:  true,
+			Appearance: mac.NSAppearanceNameDarkAqua,
 			About: &mac.AboutInfo{
-				Title:   "ui",
+				Title:   "SATMAS",
 				Message: "",
 				Icon:    icon,
 			},
