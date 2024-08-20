@@ -1,16 +1,16 @@
 import { create } from "zustand";
-import { AlgorithmType, ExperimentExecutionState, Parameters, createParameters } from "./parameters";
-import { createMRAState } from "./mra";
-import { Agent } from "./agent";
+import { Parameters } from "../mra/parameters";
+import { proto } from "../../wailsjs/wailsjs/go/models";
 
 export type ExperimentStateType = {
     parameters: Parameters
-    agents: Map<string, Agent>
+    agents: Map<string, proto.Agent>
     resources: Set<string>
     message: string;
 
     setParameters: (newParameters: Parameters) => void;
-    addAgent: (agent: Agent) => void;
+    addAgent: (agent: proto.Agent) => void;
+    setAgentDemand: (agentID: string, demand: number) => void;
     removeAgent: (agentID: string) => void;
     addResource: (resource: string) => void;
     removeResource: (resource: string) => void;
@@ -20,22 +20,33 @@ export type ExperimentStateType = {
 // Global experiment state
 const useExperimentState = create<ExperimentStateType>((set) => ({
     parameters: {
-        algorithm: AlgorithmType.COLLECTIVE,
+        algorithm: proto.SynthesisAlgorithm.COLLECTIVE,
         numberOfIterations: 10,
         timebound: 5,
     } as Parameters,
-    agents: new Map<string, Agent>(),
+    agents: new Map<string, proto.Agent>(),
     resources: new Set<string>(),
     message: "",
 
     setParameters: (newParameters: Parameters) => set(() => ({ parameters: newParameters })),
-    addAgent: (agent: Agent) => {
-        set((state) => ({ agents: new Map<string, Agent>(state.agents).set(agent.getID(), agent) }))
+    addAgent: (agent: proto.Agent) => {
+        set((state) => ({ agents: new Map<string, proto.Agent>(state.agents).set(agent.id ?? "", agent) }))
+    },
+    setAgentDemand: (agentID: string, demand: number) => {
+        set((state) => {
+            const agent = state.agents.get(agentID);
+            if (agent) {
+                agent.demand = demand;
+                state.agents.set(agentID, agent);
+                return { agents: new Map<string, proto.Agent>(state.agents) };
+            }
+            return { agents: new Map<string, proto.Agent>(state.agents) };
+        })
     },
     removeAgent: (agentID: string) => {
         set((state) => {
             state.agents.delete(agentID);
-            return { agents: new Map<string, Agent>(state.agents) };
+            return { agents: new Map<string, proto.Agent>(state.agents) };
         })
     },
     addResource: (resource: string) => {
@@ -53,9 +64,12 @@ const useExperimentState = create<ExperimentStateType>((set) => ({
             if (!agent) {
                 return state;
             }
-            agent.addResouceAccess(resource);
+            if (!agent.acc) {
+                agent.acc = [];
+            }
+            agent.acc.push(resource);
             return {
-                agents: new Map<string, Agent>(state.agents),
+                agents: new Map<string, proto.Agent>(state.agents),
             };
         })
     },

@@ -8,9 +8,8 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input";
 import { Rabbit, Turtle, Bird } from "lucide-react";
-import useExperimentState, { ExperimentStateType } from "@/lib/mra/experiment";
-import { AlgorithmType } from "@/lib/mra/parameters";
-
+import useExperimentState, { ExperimentStateType } from "@/lib/experiment/experimentState";
+import { proto } from "@/wailsjs/wailsjs/go/models";
 
 const Parameters = () => {
     const parameters = useExperimentState((state: unknown) => (state as ExperimentStateType).parameters);
@@ -19,7 +18,7 @@ const Parameters = () => {
     const updateAlgorithm = (value: unknown) => {
         setParameters({
             ...parameters,
-            algorithm: value as AlgorithmType,
+            algorithm: value as proto.SynthesisAlgorithm,
         });
     };
 
@@ -52,7 +51,7 @@ const Parameters = () => {
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value={AlgorithmType.COLLECTIVE.toString()}>
+                        <SelectItem value={proto.SynthesisAlgorithm.COLLECTIVE.toString()}>
                             <div className="flex items-start gap-3 text-muted-foreground">
                                 <Rabbit className="size-5" />
                                 <div className="grid gap-0.5">
@@ -68,7 +67,7 @@ const Parameters = () => {
                                 </div>
                             </div>
                         </SelectItem>
-                        <SelectItem value={AlgorithmType.NASH.toString()}>
+                        <SelectItem value={proto.SynthesisAlgorithm.NASH_EQUILIBRIUM.toString()}>
                             <div className="flex items-start gap-3 text-muted-foreground">
                                 <Turtle className="size-5" />
                                 <div className="grid gap-0.5">
@@ -84,7 +83,7 @@ const Parameters = () => {
                                 </div>
                             </div>
                         </SelectItem>
-                        <SelectItem value={AlgorithmType.EPSILON.toString()}>
+                        <SelectItem value={proto.SynthesisAlgorithm.EPSILON_NASH_EQUILIBRIUM.toString()}>
                             <div className="flex items-start gap-3 text-muted-foreground">
                                 <Bird className="size-5" />
                                 <div className="grid gap-0.5">

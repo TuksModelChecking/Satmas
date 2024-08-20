@@ -1,12 +1,15 @@
+from typing import Dict
 from Problem.problem import Problem
 from SATSolver.logic_encoding import encode_mra_with_strategy, encode_mra, get_strategy_profile
-from SATSolver.solver import iterative_solve
+from SATSolver.solver import run_solver_for_mra
 
-def run_solver(problem: Problem, agent_not_fix_id: int = -1, strategy_profile = {}, goal_weight_map = {}):
+def run_solve(problem: Problem, agent_not_fix_id = -1, strategy_profile = None, goal_weight_map: Dict[str, int] = {}):
     encoding = None
-    if strategy_profile == {}:
+    if strategy_profile == None:
+        print("Running solver with no strategy profile")
         encoding = encode_mra(problem.mra, problem.k)
     else:
+        print("Running solve with strategy profile")
         encoding = encode_mra_with_strategy(
             problem.mra, 
             problem.k, 
@@ -15,20 +18,12 @@ def run_solver(problem: Problem, agent_not_fix_id: int = -1, strategy_profile = 
             strategy_profile
         )
 
-    goal_weight_vars = {}
-    if len(goal_weight_map) != 0:
-        for agt in problem.mra.agt:
-            for i in range(problem.k+1):
-                goal_weight_vars[f't{i}_g_a{agt.id}'] = goal_weight_map[agt.id]
+    satisfied, vam = run_solver_for_mra(problem.mra, encoding, goal_weight_map=goal_weight_map)
 
-    res = iterative_solve(problem.mra, encoding, problem.k, problem.k+1, goal_weight_map=goal_weight_vars)
-
-    if res == None:
-        return False, False
-        
-    _, vam = res
+    if not satisfied:
+        return None, None
 
     # Extract new strategy profile
     (curr_strategy_profile, _, curr_goal_map) = get_strategy_profile(problem, vam)
-
+        
     return curr_strategy_profile, curr_goal_map

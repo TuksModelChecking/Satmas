@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package experiment;
+
+option go_package = "ui/proto";
+
+import "mra/algorithm.proto";
+import "mra/mra.proto";
+
+message Experiment {
+  mra.SynthesisAlgorithm algorithm = 1;
+  mra.MRA mra = 2;
+  int32 numberOfIterations = 3;
+  int32 timebound = 4;
+  string message = 5;
+}

@@ -4,13 +4,17 @@ go 1.21
 
 toolchain go1.22.4
 
-require github.com/wailsapp/wails/v2 v2.9.1
+require (
+	github.com/google/uuid v1.6.0
+	github.com/wailsapp/wails/v2 v2.9.1
+	google.golang.org/grpc v1.65.0
+	google.golang.org/protobuf v1.34.2
+)
 
 require (
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
 	github.com/labstack/echo/v4 v4.10.2 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
@@ -34,6 +38,7 @@ require (
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect
 )
 
 // replace github.com/wailsapp/wails/v2 v2.9.1 => /Users/kylesmith/go/pkg/mod

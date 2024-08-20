@@ -4,8 +4,8 @@ import { Textarea } from "@/components/ui/textarea";
 const Message = () => {
     return (
         <fieldset className="grid gap-6 rounded-lg border p-4">
-            <legend className="-ml-1 px-1 text-sm font-medium">
-                Experiment Message
+            <legend className="flex -ml-1 px-1 text-sm font-medium">
+                Message
             </legend>
             <div className="grid gap-3">
                 <Label htmlFor="content">Content</Label>

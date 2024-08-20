@@ -12,8 +12,8 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { useCallback } from "react";
 import Edge from "./edge";
 import '@xyflow/react/dist/style.css';
-import useExperimentState from "@/lib/mra/experiment";
-import { Agent } from "@/lib/mra/agent";
+import useExperimentState from "@/lib/experiment/experimentState";
+import { proto } from "../../wailsjs/wailsjs/go/models";
 
 const nodeTypes = {
   custom: Node,
@@ -71,7 +71,11 @@ const MRA = () => {
 
   const addAgent = () => {
     const agentID = getAgentID();
-    addAgentToState(new Agent(agentID, []));
+    addAgentToState(new proto.Agent({
+      id: agentID,
+      demand: 0,
+      acc: [],
+    }));
     setNodes((nds) => {
       return [...nds, createNode({ isAgent: true, id: agentID })]
     });

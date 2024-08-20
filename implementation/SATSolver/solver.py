@@ -34,14 +34,14 @@ def run_solver_for_mra(mra: MRA, encoding, goal_weight_map: Dict[str, int] = {},
     wdimacs,numbers,vars_name_map = g_dimacs(e, goal_weight_map)
 
     # Write to file
-    file = open("dimacs.txt", "w")
+    file = open("/Users/kylesmith/Development/Satmas/implementation/dimacs.txt", "w")
     file.writelines(wdimacs)
     file.close()
 
     print("Done with encoding")
 
     # Execute MaxSAT solver
-    p = subprocess.run(['./open-wbo_static', 'dimacs.txt'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.run(['/Users/kylesmith/Development/Satmas/implementation/open-wbo_static', '/Users/kylesmith/Development/Satmas/implementation/dimacs.txt'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     wbo_printout = str(p.stdout).split("\\ns")
     s = wbo_printout.pop()[1:14]
     satisfied = s == "OPTIMUM FOUND"

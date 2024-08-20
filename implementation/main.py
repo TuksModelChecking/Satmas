@@ -14,7 +14,6 @@ def calculate_avg_epsilon(ratios):
     return sum_vals / len(ratios)
 
 if __name__ == '__main__':
-        
     parser = argparse.ArgumentParser(
                     prog='SATMAS',
                     description='Supports strategy synthesis for MRA scenarios',

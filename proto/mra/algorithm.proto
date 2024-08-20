@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package mra;
+
+option go_package = "ui/proto";
+
+enum SynthesisAlgorithm {
+    COLLECTIVE = 0; 
+    NASHEQUILIBRIUM = 1;
+    EPSILONNASHEQUILIBRIUM = 2;
+}

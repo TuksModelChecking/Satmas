@@ -8,4 +8,6 @@ bin
 include
 ui/node_modules
 implementation/lib
+server/lib
 *.d.ts
+.vscode

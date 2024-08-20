@@ -1,3 +1,5 @@
+import { Agent } from "./agent";
+
 export const createMRAState = (set: any) => ({
     agents: Array<Agent>,
     resources: Array<string>,

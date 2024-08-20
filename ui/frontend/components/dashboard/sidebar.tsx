@@ -1,17 +1,16 @@
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
+    TooltipProvider,
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button";
-import { TooltipProvider } from "@radix-ui/react-tooltip"
 import { SquareTerminal, Triangle } from "lucide-react";
+import Settings from "@/components/appSettings/settings";
 
 const Sidebar = () => {
     return (
-        <aside className="inset-y fixed left-0 z-20 flex h-full flex-col border-r">
+        <aside className="inset-y fixed left-0 z-20 flex h-[90%] flex-col border-r">
             <div className="border-b p-2">
                 <Button variant="outline" size="icon" aria-label="Home">
                     <Triangle className="size-5 fill-foreground" />
@@ -36,8 +35,10 @@ const Sidebar = () => {
                     </Tooltip>
                 </TooltipProvider>
             </nav>
+            <nav className="mt-auto grid gap-1 p-2">
+                <Settings />
+            </nav>
         </aside>
     )
 };
-
 export default Sidebar;

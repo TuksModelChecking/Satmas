@@ -1,15 +1,28 @@
-# Satmas - Epsilon Nash Equilibrium Extension
+# SATMAS - GUI
 
-The implementation supports two algorithms, an iterative one and a direct one. The tool does rely on the open-wbo Max-SAT solver and does assume the executable
-called 'open-wbo_static' is available in the implementation directory.
-To run the code follow the steps below:
-
-1. Clone this repo
-2. Copy the open-wbo_static executable to the implementation folder.
-3. Checkout the branch of the solver you want to use (epsilon-nash)
-4. cd into the implementation folder.
-5. Install project dependencies with ``` pip install -r requirements.txt ```
-6. To execute the program you can run ``` python3 main.py -m iepne -s ./path/to/scenario.yml ```, this will execute the iterative algorithm, to run the direct 
-algorithm pass the ``` -m wepne ``` as a flag.
-
-
+[x] Finish grpc call MVP
+    [x] Fix agent demand
+    [x] Add algorithm parameters
+    [x] Dynamic switch of algorithm based on input
+    [x] Fix up experiment proto definition
+[] Add lifecycle methods to algorithms
+    [x] Add on_iteration lifecycle method
+    [x] Add on_success lifecycle method
+    [x] Add on_failed lifecycle method
+[]
+    [] Add persistence of experiment
+        [] Save experiment -> needs to return something so that we can update UI state
+        [] Read experiment metadata from store 
+    [] Refactor gRPC experiment executor to be async
+    [] Update experiment when done
+[]
+    [] Add collectively optimal stratey synthesis
+[] Strategy viewer
+    [] Get strategies from grpc API
+    [] Persist strategies
+    [] Show strategies
+[]
+    [] Basic Validations
+[] Settings
+    [] gRPC connection string - gRPC request
+    [] Experiment File Path - gRPC request

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package experiment;
+
+option go_package = "ui/proto";
+
+import "experiment/experiment.proto";
+
+// The experiment executor service definition.
+service ExperimentExecutor {
+  // executes an experiment
+  rpc ExecuteExperiment(ExecuteExperimentRequest)
+      returns (ExecuteExperimentResponse) {}
+}
+
+message ExecuteExperimentRequest { Experiment experiment = 1; }
+
+message ExecuteExperimentResponse { bool running = 1; }

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package experiment;
+
+option go_package = "ui/proto";
+
+import "experiment/experiment.proto";
+
+// The experiment executor service definition.
+service ExperimentStateController {
+  // executes an experiment
+  rpc SaveExperiment(SaveExperimentRequest) returns (SaveExperimentResponse) {}
+
+  // mark successful
+
+  // mark failed
+
+  // mark running
+}
+
+message SaveExperimentRequest { Experiment experiment = 1; }
+
+message SaveExperimentResponse {}

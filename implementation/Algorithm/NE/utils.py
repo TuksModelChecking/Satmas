@@ -1,80 +1,10 @@
-from SATSolver.logic_encoding import get_strategy_profile, encode_mra, encode_mra_with_strategy, h_get_all_observed_resource_states, h_get_all_possible_actions_for_state_observation, state_observation_to_string
-import scipy.stats as ss
-
-import math
-
-def h_calculate_improvement(prev_goal_map, curr_goal_map):
-    return _proportional_scaling(prev_goal_map, curr_goal_map)
-
-def h_calculate_weight_update(prev_goal_map, curr_goal_map, weight_map):
-    return None
+from SATSolver.logic_encoding import h_get_all_possible_actions_for_state_observation, state_observation_to_string
 
 def ratios(prev_goal_map, curr_goal_map):
-    ratios = []
+    ratios = {}
     for agt_id in prev_goal_map:
-        ratios.append(curr_goal_map[agt_id] / prev_goal_map[agt_id])
+        ratios[agt_id] = curr_goal_map[agt_id] / prev_goal_map[agt_id]
     return ratios
-
-def _proportional_scaling(prev_goal_map, curr_goal_map):
-    ratios = []
-    for agt_id in prev_goal_map:
-        ratios.append(curr_goal_map[agt_id] / prev_goal_map[agt_id])
-
-    min_ratio = min(ratios) 
-    max_ratio = max(ratios)
-
-    target_range = 50
-
-    scaling_factor = 1.0
-    
-    if (max_ratio - min_ratio) != 0:
-        scaling_factor = target_range / (max_ratio - min_ratio)
-
-    weight_map = {}
-
-    counter = 0
-    for agt_id in prev_goal_map:
-        weight_map[agt_id] = math.floor(ratios[counter] * scaling_factor)
-        counter += 1
-
-    return weight_map
-
-def _fraction_scale_policy(agt_id, prev_goal_map, curr_goal_map):
-    return math.floor((curr_goal_map[agt_id] / prev_goal_map[agt_id]) * 10 + 0.5)
-
-def _fraction_rank_policy(prev_goal_map, curr_goal_map, weight_map):
-    fractions = []
-    for agt_id in prev_goal_map:
-        fractions.append(curr_goal_map[agt_id] / prev_goal_map[agt_id])
-
-    ranks = ss.rankdata(fractions)
-    
-    counter = 0
-    for agt_id in prev_goal_map:
-        if agt_id in weight_map:
-            weight_map[agt_id] += int(ranks[counter])
-        else:
-            weight_map[agt_id] = int(ranks[counter])
-        counter += 1
-
-    return weight_map
-
-def _rank_differences_policy(prev_goal_map, curr_goal_map, weight_map):
-    differences = []    
-    for agt_id in prev_goal_map:
-        differences.append(curr_goal_map[agt_id] - prev_goal_map[agt_id])
-
-    ranks = ss.rankdata(differences)
-
-    counter = 0
-    for agt_id in prev_goal_map:
-        if agt_id in weight_map:
-            weight_map[agt_id] += int(ranks[counter])
-        else:
-            weight_map[agt_id] = int(ranks[counter])
-        counter += 1
-
-    return weight_map
 
 def h_choose_action_greedy(possible_actions):
     for action in possible_actions:

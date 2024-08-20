@@ -3,22 +3,45 @@ package main
 import (
 	"context"
 	"fmt"
+	"ui/go/api"
+	"ui/go/experiment"
+
+	"github.com/wailsapp/wails/v2/pkg/logger"
 )
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx        context.Context
+	logger     logger.Logger
+	grpcServer api.GRPCServer
+	*experiment.Manager
+	*experiment.Store
 }
 
-// NewApp creates a new App application struct
-func NewApp() *App {
-	return &App{}
+func NewApp(
+	logger logger.Logger,
+	grpcServer api.GRPCServer,
+	experimentManager *experiment.Manager,
+	experimentStore *experiment.Store,
+) *App {
+	return &App{
+		logger:     logger,
+		grpcServer: grpcServer,
+		Manager:    experimentManager,
+		Store:      experimentStore,
+	}
 }
 
 // startup is called at application startup
 func (a *App) startup(ctx context.Context) {
-	// Perform your setup here
 	a.ctx = ctx
+
+	// start grpc server in separate thread (blocking operation)
+	go func() {
+		if err := a.grpcServer.StartServer(); err != nil {
+			a.logger.Fatal(fmt.Sprintf("error starting app grpc server: %s", err))
+		}
+	}()
 }
 
 // domReady is called after front-end resources have been loaded
@@ -35,10 +58,7 @@ func (a *App) beforeClose(ctx context.Context) (prevent bool) {
 
 // shutdown is called at application termination
 func (a *App) shutdown(ctx context.Context) {
-	// Perform your teardown here
-}
-
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+	if err := a.grpcServer.StopServer(); err != nil {
+		a.logger.Fatal(fmt.Sprintf("error stopping app grpc server: %s", err))
+	}
 }

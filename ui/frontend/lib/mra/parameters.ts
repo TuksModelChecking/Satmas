@@ -1,26 +1,14 @@
+import { proto } from "@/wailsjs/wailsjs/go/models";
+
 export type Parameters = {
     numberOfIterations: number;
     timebound: number;
-    algorithm: AlgorithmType;
-}
-
-export enum AlgorithmType {
-    COLLECTIVE,
-    NASH,
-    EPSILON,
-}
-
-export enum ExperimentExecutionState {
-    DRAFT,
-    PENDING,
-    RUNNING,
-    SUCCESSFUL,
-    FAILED
+    algorithm: proto.SynthesisAlgorithm;
 }
 
 export const createParameters = (set: any) => ({
     numberOfIterations: Number,
     timebound: Number,
-    algorithm: AlgorithmType,
+    algorithm: proto,
     setParameters: (newParameters: Parameters) => set({ parameters: newParameters }),
 })

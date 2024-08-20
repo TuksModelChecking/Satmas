@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package mra;
+
+option go_package = "ui/proto";
+
+// Agent is an MRA agent
+message Agent {
+  string id = 1;
+  int32 demand = 2;
+  repeated string acc = 3;
+}
+
+// MRA is an MRA scenario
+message MRA {
+  string id = 1;
+  repeated Agent agents = 2;
+  repeated string resources = 3;
+}
