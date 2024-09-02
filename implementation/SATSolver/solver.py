@@ -2,19 +2,14 @@ import subprocess
 import time
 import subprocess
 
-from typing import Dict
-from pyeda.boolalg.expr import expr2dimacscnf
+from typing import Dict, Tuple
+from pyeda.boolalg.expr import And
 
 from Problem.problem import MRA
 from SATSolver.logic_encoding import g_dimacs
 
-def run_solver_for_mra(mra: MRA, encoding, goal_weight_map: Dict[str, int] = {}, dimacs_file_path: str = "dimacs.txt") -> bool:
-    total_encoding_time = 0
-    total_solving_time = 0
+def run_solver_for_encoding(encoding: And, goal_weight_map: Dict[str, int] = {}) -> Tuple[bool, dict] :
     variable_assignment_map = {}
-
-    # Start Encoding Timer
-    encoding_start = time.perf_counter()
 
     # Encode Problem as propositional logic formula
     e = encoding
@@ -23,12 +18,6 @@ def run_solver_for_mra(mra: MRA, encoding, goal_weight_map: Dict[str, int] = {},
     if e is False:
         print("MRA is known to be unsolvable")
         return False
-
-    # Indicate end of encoding
-    encoding_end = time.perf_counter()
-
-    # Start solving MaxSAT problem
-    solve_start = time.perf_counter()
 
     # Get DIMACS format from encoding
     wdimacs,numbers,vars_name_map = g_dimacs(e, goal_weight_map)
@@ -47,7 +36,7 @@ def run_solver_for_mra(mra: MRA, encoding, goal_weight_map: Dict[str, int] = {},
     satisfied = s == "OPTIMUM FOUND"
 
     if not satisfied:
-        return None
+        return False
 
     # Parse tool output to get variabale assignments
     assignments = str(p.stdout).split("\\nv")[1].strip().split(" ")[:-1]
@@ -58,9 +47,6 @@ def run_solver_for_mra(mra: MRA, encoding, goal_weight_map: Dict[str, int] = {},
     # Map the assignments to their variables
     if satisfied:
         variable_assignment_map = map_truth_assignments(vars_name_map, assignments)
-
-    solve_end = time.perf_counter()
-    print(f"s_t = {round(solve_end - solve_start, 1)}s")
 
     return satisfied, variable_assignment_map
 

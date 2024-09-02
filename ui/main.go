@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"log"
 	"ui/go/api"
 	"ui/go/experiment"
@@ -21,60 +22,69 @@ var icon []byte
 
 func main() {
 
-	// Create logger
+	// create logger
 	appLogger := logger.NewDefaultLogger()
 
-	// Prepare connection to python server
+	// prepare connection to python server
 	toolConnection, err := api.NewGRPCClientConnection(
 		"localhost",
 		50051,
 		false,
 	)
 	if err != nil {
-		appLogger.Fatal("error creating tool grpc client connection")
+		appLogger.Fatal(fmt.Sprintf("error creating tool grpc client connection: %s", err.Error()))
 	}
-
-	// Prepare grpc experiment executor service
+	// prepare grpc experiment executor service
 	experimentExecutor := experiment.NewExecutorGRPC(
 		appLogger,
 		toolConnection,
 	)
 
-	// Create a grpc server
-	grpcServer := api.NewGRPCServerImpl(
-		appLogger,
-		8080,
-		[]api.GRPCService{},
-	)
-
-	// Create an experiment manager
-	experimentManager := experiment.NewManager(
-		appLogger,
-		experimentExecutor,
-	)
-
-	// Create experiment store
+	// create experiment store
 	experimentStore := experiment.NewStore(
 		appLogger,
 		"./",
 	)
 
-	app := NewApp(
+	// create experiment state controller
+	experimentStateController := experiment.NewExperimentStateControllerImpl(
 		appLogger,
-		grpcServer,
-		experimentManager,
+		experimentStore,
+		experimentExecutor,
+	)
+
+	// create app grpc server
+	grpcServer := api.NewGRPCServerImpl(
+		appLogger,
+		7771,
+		[]api.GRPCService{
+			experiment.NewExperimentStateControllerGRPCAdaptor(
+				experimentStateController,
+			),
+		},
+	)
+
+	// prepare experiment metadata reader
+	experimentMetadataReader := experiment.NewExperimentMetadataReaderImpl(
 		experimentStore,
 	)
 
-	// Create application with options
+	app := NewApp(
+		appLogger,
+		grpcServer,
+		experiment.NewExperimentStateControllerTSAdaptor(
+			experimentStateController,
+		),
+		experimentMetadataReader,
+	)
+
+	// create application with options
 	err = wails.Run(&options.App{
-		Title:     "SATMAS",
-		Width:     1024,
-		Height:    768,
-		MinWidth:  1280,
-		MinHeight: 800,
-		// MaxWidth:          1280,
-		// MaxHeight:         800,
+		Title:             "SATMAS",
+		Width:             1024,
+		Height:            768,
+		MinWidth:          1280,
+		MinHeight:         800,
 		DisableResize:     false,
 		Fullscreen:        false,
 		Frameless:         false,
@@ -101,8 +111,7 @@ func main() {
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
 			DisableWindowIcon:    false,
-			// DisableFramelessWindowDecorations: false,
-			WebviewUserDataPath: "",
+			WebviewUserDataPath:  "",
 		},
 		// Mac platform specific options
 		Mac: &mac.Options{

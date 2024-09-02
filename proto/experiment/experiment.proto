@@ -7,10 +7,19 @@ option go_package = "ui/proto";
 import "mra/algorithm.proto";
 import "mra/mra.proto";
 
+enum ExperimentState {
+  PENDING = 0;
+  QUEUED = 1;
+  SUCCESSFUL = 2;
+  FAILED = 3;
+}
+
 message Experiment {
-  mra.SynthesisAlgorithm algorithm = 1;
-  mra.MRA mra = 2;
-  int32 numberOfIterations = 3;
-  int32 timebound = 4;
-  string message = 5;
+  string id = 1;
+  mra.SynthesisAlgorithm algorithm = 2;
+  mra.MRA mra = 3;
+  int32 numberOfIterations = 4;
+  int32 timebound = 5;
+  string message = 6;
+  ExperimentState state = 7;
 }

@@ -1,6 +1,6 @@
 from Algorithm.NE.shared import run_solve
 from Problem.problem import Problem
-from SATSolver.solver import run_solver_for_mra
+from SATSolver.solver import run_solver_for_encoding
 from SATSolver.logic_encoding import get_strategy_profile, encode_mra, encode_mra_with_strategy, h_get_all_observed_resource_states, h_get_all_possible_actions_for_state_observation, state_observation_to_string
 
 class NashSynthesiser:
@@ -11,10 +11,12 @@ class NashSynthesiser:
 
     def find_ne(self, problem: Problem) -> bool:
         # Encode Problem for solver
-        encoding = encode_mra(problem.mra, problem.k) 
+        valid, encoding = encode_mra(problem.mra, problem.k) 
+        if valid == False:
+            return False
 
         # Perform initial solve
-        satisfied, var_assignment_map = run_solver_for_mra(problem.mra, encoding)
+        satisfied, var_assignment_map = run_solver_for_encoding(encoding)
 
         # If not satisfied a nash equilibrium for the mra scenario does not exist
         if not satisfied:
@@ -47,7 +49,7 @@ class NashSynthesiser:
 
             if nashEqulibriumFound:
                 self.on_successful(prev_strategy_profile)
-                return prev_strategy_profile
+                return True
             elif nashEqulibriumFound == None:
                 break
 
@@ -85,8 +87,8 @@ class NashSynthesiser:
             if curr_goal_map[agt.id] > prev_goal_map[agt.id]:
                 print(f" - Found better higher payoff strategy for {agt.id}")
                 print()
-                if curr_strategy_profile in past_strategies:
-                    return None
+                # if curr_strategy_profile in past_strategies:
+                #     return None
 
                 # Record new strategy profile
                 past_strategies.append(curr_strategy_profile)

@@ -1,11 +1,14 @@
 package experiment
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path"
+	"slices"
+	"sync"
 	"time"
 	"ui/go/codegen/ui/proto"
 
@@ -13,26 +16,38 @@ import (
 	googleProto "google.golang.org/protobuf/proto"
 )
 
+var (
+	ErrExperimentNotFound         = errors.New("experiment already exists")
+	ErrExperimentMetadataNotFound = errors.New("experiment metadata not found")
+)
+
 type Store struct {
 	logger             logger.Logger
 	experimentRootPath string
+	mu                 sync.Mutex
+	experimentMetadata map[string]*Metadata
 }
 
 func NewStore(logger logger.Logger, experimentRootPath string) *Store {
 	return &Store{
 		logger:             logger,
 		experimentRootPath: experimentRootPath,
+		mu:                 sync.Mutex{},
+		experimentMetadata: map[string]*Metadata{},
 	}
 }
 
-func (s *Store) StoreExperiment(e *proto.Experiment) error {
-	experimentFilePath := s.getStoreRootPath(e.Mra.Id)
+func (s *Store) StoreExperiment(ctx context.Context, experiment *proto.Experiment) error {
+	experimentFilePath := s.getStoreRootPath(experiment.Id)
+	s.logger.Trace(
+		fmt.Sprintf("storing experiment for %s", experimentFilePath),
+	)
 
-	// Create file
+	// create file to store experiment
 	file, err := os.Create(experimentFilePath)
 	if err != nil {
 		s.logger.Error(
-			fmt.Sprintf("could not create file for experiment: %s", err),
+			fmt.Sprintf("could not create file for experiment: %s", err.Error()),
 		)
 		return fmt.Errorf("could not create file for experiment: %w", err)
 	}
@@ -44,8 +59,8 @@ func (s *Store) StoreExperiment(e *proto.Experiment) error {
 		}
 	}()
 
-	// marshal experiment
-	marshalledExperiment, err := googleProto.Marshal(e)
+	// marshal experiment using protobuf
+	marshalledExperiment, err := googleProto.Marshal(experiment)
 	if err != nil {
 		s.logger.Error(
 			fmt.Sprintf("could not marshal experiment: %s", err),
@@ -53,7 +68,7 @@ func (s *Store) StoreExperiment(e *proto.Experiment) error {
 		return fmt.Errorf("could not marshal experiment: %w", err)
 	}
 
-	// write marshalled data to file
+	// write marshalled marshalled experiment to file
 	if _, err := file.Write(marshalledExperiment); err != nil {
 		s.logger.Error(
 			fmt.Sprintf("could not write marshalled experiment to file: %s", err),
@@ -61,20 +76,92 @@ func (s *Store) StoreExperiment(e *proto.Experiment) error {
 		return fmt.Errorf("could not write marshalled experiment to file: %w", err)
 	}
 
-	// write metadata to file
-	if err := s.writeExperimentMetadata(experimentFilePath, e); err != nil {
+	// write experiment metadata to metadata file
+	if err := s.writeExperimentMetadata(experiment); err != nil {
 		s.logger.Error(
-			fmt.Sprintf("could not write experiment metadata with id %s: %s", e.Mra.Id, err),
+			fmt.Sprintf("could not write experiment metadata with id %s: %s", experiment.Id, err),
 		)
 		return fmt.Errorf("could not write experiment metadata: %w", err)
 	}
 
+	s.logger.Trace(
+		fmt.Sprintf("done storing experiment and associated metadata for %s", experiment.Id),
+	)
+
 	return nil
 }
 
-func (s *Store) writeMetadataToFile(filePath string, data []byte) error {
+func (s *Store) RetrieveExperiment(ctx context.Context, experimentID string) (*proto.Experiment, error) {
+	experimentFilePath := s.getStoreRootPath(experimentID)
+
+	// read experiment data from file
+	data, err := os.ReadFile(experimentFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrExperimentNotFound
+		}
+		s.logger.Error(
+			fmt.Sprintf("error reading experiment file: %s", err.Error()),
+		)
+		return nil, fmt.Errorf("error reading experiment file: %w", err)
+	}
+
+	// unmarshal to protobuf experiment type
+	marshalledExperiment := new(proto.Experiment)
+	if err := googleProto.Unmarshal(data, marshalledExperiment); err != nil {
+		s.logger.Error(
+			fmt.Sprintf("error unmarshalling experiment from file: %s", err.Error()),
+		)
+		return nil, fmt.Errorf("error unmarshalling experiment from file: %s", err.Error())
+	}
+
+	return marshalledExperiment, err
+}
+
+func (s *Store) RetrieveMetadataForExperiment(id string) (*Metadata, error) {
+	metadata, err := s.RetrieveMetadata()
+	if err != nil {
+		s.logger.Error(
+			fmt.Sprintf("error retrieving experiments metadata: %s", err.Error()),
+		)
+		return nil, fmt.Errorf("error retrieving experiments metadata: %w", err)
+	}
+
+	for _, experimentMetadata := range metadata {
+		if experimentMetadata.ID == id {
+			return experimentMetadata, nil
+		}
+	}
+
+	return nil, ErrExperimentMetadataNotFound
+}
+
+func (s *Store) RetrieveMetadata() ([]*Metadata, error) {
+	s.logger.Trace(
+		"retrieving metadata for all experiments",
+	)
+
+	metadataValues := []*Metadata{}
+	for _, value := range s.experimentMetadata {
+		metadataValues = append(metadataValues, value)
+	}
+
+	slices.SortFunc(metadataValues, func(left *Metadata, right *Metadata) int {
+		return -left.CreatedAt.Compare(right.CreatedAt)
+	})
+
+	return metadataValues, nil
+}
+
+func (s *Store) WriteMetadataToFile() error {
+	s.logger.Trace(
+		"writing all experiment metadata to file",
+	)
+
+	filePath := s.getStoreRootPath("metadata.json")
+
 	// open metadata file
-	file, err := os.Open(filePath)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		s.logger.Error(
 			fmt.Sprintf("could not open metadata file: %s", err),
@@ -89,8 +176,17 @@ func (s *Store) writeMetadataToFile(filePath string, data []byte) error {
 		}
 	}()
 
+	// marshal metadata
+	marshalledMetadata, err := json.Marshal(s.experimentMetadata)
+	if err != nil {
+		s.logger.Error(
+			fmt.Sprintf("could not marshal all experiment metadata: %s", err),
+		)
+		return fmt.Errorf("error could not marshall all experiment metadata")
+	}
+
 	// write marshalled metadata to file
-	if _, err := file.Write(data); err != nil {
+	if _, err := file.Write(marshalledMetadata); err != nil {
 		s.logger.Error(
 			fmt.Sprintf("could not write marshalled metadata to file: %s", err),
 		)
@@ -100,95 +196,62 @@ func (s *Store) writeMetadataToFile(filePath string, data []byte) error {
 	return nil
 }
 
-func (s *Store) writeExperimentMetadata(filePath string, e *proto.Experiment) error {
-	// prepare experiment metadata struct
-	experimentMetadata := &Metadata{
-		CreatedAt:         time.Now(),
-		ID:                e.Mra.Id,
-		NumberOfAgents:    len(e.Mra.Agents),
-		NumberOfResources: len(e.Mra.Resources),
-		PathToDefinition:  filePath,
-		PathToResult:      "",
-	}
+func (s *Store) ReadMetadataFromFile() error {
+	filePath := s.getStoreRootPath("metadata.json")
 
-	// read existing metadata file
-	metadata, err := s.RetrieveMetadata()
+	marshalledMetadata, err := os.ReadFile(filePath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			s.logger.Info("could not find metadata file, creating one")
+			if _, err := os.Create(filePath); err != nil {
+				s.logger.Error(
+					fmt.Sprintf("error creating metadata file: %s", err),
+				)
+				return fmt.Errorf("error creating metadata file: %w", err)
+			}
+			return nil
+		}
 		s.logger.Error(
-			fmt.Sprintf("could not retrieve existing experiment metadata: %s", err),
+			fmt.Sprintf("error reading %s: %s", filePath, err),
 		)
-		return fmt.Errorf("could not retrieve existing experiment metadata: %w", err)
+		return fmt.Errorf("error reading metadata file")
 	}
 
-	// append new metadata
-	metadata = append(metadata, experimentMetadata)
-
-	// marshal into json
-	marshalledMetadata, err := json.Marshal(metadata)
-	if err != nil {
-		s.logger.Error(
-			fmt.Sprintf("could not marshal metadata into json: %s", err),
-		)
-		return fmt.Errorf("could not marshal metadata into json: %w", err)
+	if len(marshalledMetadata) == 0 {
+		return nil
 	}
 
-	// write data to file
-	if err := s.writeMetadataToFile(filePath, marshalledMetadata); err != nil {
+	metadata := map[string]*Metadata{}
+	if err := json.Unmarshal(marshalledMetadata, &metadata); err != nil {
 		s.logger.Error(
-			fmt.Sprintf("could not write marshalled metadata to file %s: %s", filePath, err),
+			fmt.Sprintf("error unmarshalling all experiment metadata: %s", err),
 		)
-		return fmt.Errorf("could not write marshalled metadata to file: %w", err)
+		return fmt.Errorf("error unmarshalling all experiment metadata: %w", err)
 	}
 
+	s.experimentMetadata = metadata
 	return nil
 }
 
-func (s *Store) RetrieveMetadata() ([]*Metadata, error) {
-	metadataFilePath := s.getStoreRootPath("metadata.json")
-
-	// attempt to open metadata file
-	file, err := os.Open(metadataFilePath)
-	if !os.IsNotExist(err) {
-		s.logger.Error(
-			fmt.Sprintf("could not create file for experiment: %s", err),
-		)
-		return nil, fmt.Errorf("could not create file for experiment: %w", err)
+func (s *Store) writeExperimentMetadata(e *proto.Experiment) error {
+	// check if experiment metadata already exists, if it does not exist create entry
+	if experimentMetadata, found := s.experimentMetadata[e.Id]; !found {
+		s.experimentMetadata[e.Id] = &Metadata{
+			CreatedAt:         time.Now(),
+			ID:                e.Id,
+			NumberOfAgents:    len(e.Mra.Agents),
+			NumberOfResources: len(e.Mra.Resources),
+			State:             getNiceExperimentStateName(e.State),
+			PathToDefinition:  s.getStoreRootPath(e.Id),
+			PathToResult:      "",
+		}
 	} else {
-		file, err = os.Create(metadataFilePath)
-		if err != nil {
-			s.logger.Error(
-				fmt.Sprintf("could not create file for stored experiments metadata: %s", err),
-			)
-			return nil, fmt.Errorf("could not create file for stored experiments metadata: %w", err)
-		}
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			s.logger.Error(
-				fmt.Sprintf("could not close experiment file: %s", err),
-			)
-		}
-	}()
-
-	// read data from file into memory
-	marshalledMetadata, err := io.ReadAll(file)
-	if err != nil {
-		s.logger.Error(
-			fmt.Sprintf("error reading marshalled metadata from file: %s", err),
-		)
-		return nil, fmt.Errorf("error reading marshalled metadata from file: %w", err)
+		experimentMetadata.NumberOfAgents = len(e.Mra.Agents)
+		experimentMetadata.NumberOfResources = len(e.Mra.Resources)
+		experimentMetadata.State = getNiceExperimentStateName(e.State)
 	}
 
-	// unmarshal marshalled data into array of metadata structs
-	var metadataResults []*Metadata
-	if err := json.Unmarshal(marshalledMetadata, &metadataResults); err != nil {
-		s.logger.Error(
-			fmt.Sprintf("error unmarshalling marshalled metadata into metadata array: %s", err),
-		)
-		return nil, fmt.Errorf("error unmarshalling marshalled metadata into metadata array: %w", err)
-	}
-
-	return metadataResults, nil
+	return nil
 }
 
 func (s *Store) getStoreRootPath(fileName string) string {

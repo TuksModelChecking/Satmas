@@ -19,15 +19,6 @@ class EpsilonNashSynthesiser:
 
         print(f"Initial Goal Map: {prev_goal_map}")
 
-        # Build full strategy profile from encoding truth assignments
-        # for agt in problem.mra.agt:
-        #     prev_strategy_profile[agt.id] = h_build_full_strategy(
-        #         agt, 
-        #         prev_strategy_profile[agt.id], 
-        #         h_get_all_observed_resource_states(agt, problem.mra.agt),
-        #         h_choose_action_idle
-        #     )
-
         minEpsilon = 999
         for i in range(iterations):
             print(f"------------------- Iteration {(i+1)}/{iterations} -------------------")
@@ -43,15 +34,6 @@ class EpsilonNashSynthesiser:
 
             # Run solve normally with the updated weight map
             psp, pgp = run_solve(problem, -1, None, h_build_variable_agent_weight_map(problem, weight_map))
-
-            # Fill out previous strategy profile(psp) with actions for all possible states
-            # for agt in problem.mra.agt:
-            #     psp[agt.id] = h_build_full_strategy(
-            #         agt, 
-            #         psp[agt.id], 
-            #         h_get_all_observed_resource_states(agt, problem.mra.agt),
-            #         h_choose_action_idle,
-            #     )
 
             # Set 'new' previous strategy profile and goal map
             prev_strategy_profile = psp

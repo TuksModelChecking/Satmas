@@ -38,7 +38,7 @@ class State:
     Returns:
     Returns pyeda.And Expression
 """
-def encode_mra(mra: MRA, k: int) -> And:
+def encode_mra(mra: MRA, k: int) -> Tuple[bool, And]:
     mra_encoded = And(
         encode_goal_reachability_formula(mra.agt, mra.num_agents_plus(), k),
         encode_m_k(mra, k),
@@ -46,9 +46,9 @@ def encode_mra(mra: MRA, k: int) -> And:
         encode_frequency_optimization(mra, k)
     )
     if str(mra_encoded) == "0":
-        return False
+        return False, None
     else:
-        return mra_encoded.tseitin()
+        return True, mra_encoded.tseitin()
 
 def encode_mra_with_strategy(mra: MRA, k: int, agents: List[Agent], fix_agent: int, strategy_profile: Dict[int, List[Tuple[List[State], str]]]) -> And:
     mra_encoded = And(
@@ -76,6 +76,7 @@ def encode_mra_simple(mra: MRA, k: int) -> And:
         return mra_encoded.tseitin()
 
 def g_dimacs(mra_encoded: And, weight_map: Dict[str, int] = {}):
+    print(type(mra_encoded))
     cnf = expr2dimacscnf(mra_encoded)
     dimacs = str(cnf[1]).split("\n")
 
@@ -769,6 +770,7 @@ def get_strategy_profile(problem, var_assignment_map):
 
     agent_observations = {}
     for resource_at_timestep in resources:
+        print(resource_at_timestep)
         for agent in problem.mra.agt:
             state_observations = []
             observation = ''

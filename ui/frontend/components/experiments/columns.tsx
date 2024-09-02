@@ -1,19 +1,29 @@
-import { mra } from "@/wailsjs/wailsjs/go/models";
+import { experiment } from "@/wailsjs/wailsjs/go/models";
 import { ColumnDef } from "@tanstack/react-table";
 
-export const columns: ColumnDef<mra.MRA>[] = [
+export const columns: ColumnDef<experiment.Metadata>[] = [
     {
         accessorKey: "id",
         header: "ID",
+        accessorFn: row => `${row.id.substring(0, 4)}...`
     },
     {
-        accessorKey: "agents",
+        accessorKey: "numberOfAgents",
         header: "No. Agents",
-        accessorFn: row => `${row.agents.length}`
+        accessorFn: row => `${row.numberOfAgents}`
     },
     {
-        accessorKey: "resources",
+        accessorKey: "numberOfResources",
         header: "No. Resources",
-        accessorFn: row => `${row.resources.length}`
+        cell: ({ cell, row }) => {
+            return <p>{`${row.original.numberOfResources}`}</p>;
+        }
+    },
+    {
+        accessorKey: "state",
+        header: "State",
+        cell: ({ cell, row }) => {
+            return <p>{row.original.state}</p>
+        }
     },
 ];

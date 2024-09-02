@@ -14,26 +14,61 @@ import MRA from "./mra"
 import Parameters from "./parameters"
 import Message from "./message"
 import Sidebar from "./sidebar"
-import { AddExperiment, GenerateMRA } from "../../wailsjs/wailsjs/go/main/App";
+import { SaveExperiment, RunExperiment, GenerateMRA } from "@/wailsjs/wailsjs/go/main/App";
 import useExperimentState from "@/lib/experiment/experimentState"
 import { Toaster, toast } from "sonner"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { columns } from "../experiments/columns"
 import ExperimentTable from "../experiments/table"
 import { experiment } from "@/wailsjs/wailsjs/go/models"
+import { useExperimentMetadata } from "@/lib/experiment/experimentExecutionState"
+import { EventsOn } from "@/wailsjs/wailsjs/runtime/runtime"
 
 export function Dashboard() {
   const agents = useExperimentState((state) => state.agents);
   const resources = useExperimentState((state) => state.resources);
   const parameters = useExperimentState((state) => state.parameters);
+  const fetchMetadata = useExperimentMetadata((state) => state.fetchAllMetadata);
   const [submittingExperiment, setSubmittingExperiment] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [eventReceived, setEventReceived] = useState(false);
+  const [metadata, setMetadata] = useState<Array<experiment.Metadata>>([]);
 
-  const fetchMetadata = async () => {
-
+  const handleFetchMetadata = async () => {
+    try {
+      const fetchMetadataResponse = await fetchMetadata();
+      setMetadata(fetchMetadataResponse);
+    } catch (e) {
+      toast.error("error fetching experiment metadata")
+    }
   };
+
+  useEffect(() => {
+    const cancel = EventsOn("experimentSuccessful", (data) => {
+      toast(`Got an event with ${data.id}`);
+      console.debug("event: experiment successful");
+      handleFetchMetadata();
+    });
+
+    return () => {
+      cancel();
+    }
+  }, [])
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const fetchMetadataResponse = await fetchMetadata();
+        setMetadata(fetchMetadataResponse);
+      } catch (e) {
+        toast.error("error fetching experiment metadata")
+      }
+    })()
+  }, [saving, eventReceived])
 
   const handleRunExperiment = async () => {
     setSubmittingExperiment(true);
+    setSaving(true);
     const listOfAgents = Array.from(agents.values());
     const listOfResources = Array.from(resources.values());
 
@@ -41,15 +76,35 @@ export function Dashboard() {
       const newMRA = await GenerateMRA(listOfAgents, listOfResources)
       const tsExperiment = new experiment.TSExperiment();
       tsExperiment.algorithm = parameters.algorithm.toString();
-      console.log(parameters.algorithm);
       tsExperiment.numberOfIterations = parameters.numberOfIterations.toString();
       tsExperiment.timebound = parameters.timebound.toString();
       tsExperiment.mra = newMRA;
-      await AddExperiment(tsExperiment);
+      await RunExperiment(tsExperiment);
     } catch (e) {
       toast.error(`Something went wrong trying to run the experiment: ${e}`);
     } finally {
+      setSaving(false);
       setSubmittingExperiment(false);
+    }
+  };
+
+  const handleSaveExperiment = async () => {
+    setSaving(true);
+    const listOfAgents = Array.from(agents.values());
+    const listOfResources = Array.from(resources.values());
+
+    try {
+      const newMRA = await GenerateMRA(listOfAgents, listOfResources)
+      const tsExperiment = new experiment.TSExperiment();
+      tsExperiment.algorithm = parameters.algorithm.toString();
+      tsExperiment.numberOfIterations = parameters.numberOfIterations.toString();
+      tsExperiment.timebound = parameters.timebound.toString();
+      tsExperiment.mra = newMRA;
+      await SaveExperiment(tsExperiment);
+    } catch (e) {
+      toast.error(`Something went wrong trying to run the experiment: ${e}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -61,8 +116,8 @@ export function Dashboard() {
         <header className="sticky top-0 z-10 flex h-[57px] items-center justify-between gap-1 border-b bg-background px-4">
           <h1 className="text-xl font-semibold">Experiment Runner</h1>
           <div className="flex items-center gap-2">
-            <Button variant="secondary">
-              <Save className="mr-2 h-4 w-4" /> Save Experiment
+            <Button variant="secondary" onClick={handleSaveExperiment} disabled={saving}>
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Experiment
             </Button>
             <Button onClick={handleRunExperiment} disabled={submittingExperiment}>
               {submittingExperiment ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />} Run Experiment
@@ -76,7 +131,7 @@ export function Dashboard() {
             <form className="grid w-full items-start gap-6">
               <Parameters />
               <Message />
-              <ExperimentTable columns={columns} data={[]} />
+              <ExperimentTable columns={columns} data={metadata} />
             </form>
           </div>
           <div className="relative flex flex-col rounded-xl bg-muted/50 p-4 lg:col-span-2 overflow-hidden max-h-[75vh]">

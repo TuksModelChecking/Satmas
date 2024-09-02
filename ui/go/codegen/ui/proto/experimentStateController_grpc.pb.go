@@ -19,7 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	ExperimentStateController_SaveExperiment_FullMethodName = "/experiment.ExperimentStateController/SaveExperiment"
+	ExperimentStateController_SaveExperiment_FullMethodName           = "/experiment.ExperimentStateController/SaveExperiment"
+	ExperimentStateController_RunExperiment_FullMethodName            = "/experiment.ExperimentStateController/RunExperiment"
+	ExperimentStateController_MarkExperimentFailed_FullMethodName     = "/experiment.ExperimentStateController/MarkExperimentFailed"
+	ExperimentStateController_MarkExperimentSuccessful_FullMethodName = "/experiment.ExperimentStateController/MarkExperimentSuccessful"
 )
 
 // ExperimentStateControllerClient is the client API for ExperimentStateController service.
@@ -28,8 +31,14 @@ const (
 //
 // The experiment executor service definition.
 type ExperimentStateControllerClient interface {
-	// executes an experiment
+	// persists experiment
 	SaveExperiment(ctx context.Context, in *SaveExperimentRequest, opts ...grpc.CallOption) (*SaveExperimentResponse, error)
+	// run experiment
+	RunExperiment(ctx context.Context, in *RunExperimentRequest, opts ...grpc.CallOption) (*RunExperimentResponse, error)
+	// mark failed
+	MarkExperimentFailed(ctx context.Context, in *MarkExperimentFailedRequest, opts ...grpc.CallOption) (*MarkExperimentFailedResponse, error)
+	// mark successful
+	MarkExperimentSuccessful(ctx context.Context, in *MarkExperimentSuccessfulRequest, opts ...grpc.CallOption) (*MarkExperimentSuccessfulResponse, error)
 }
 
 type experimentStateControllerClient struct {
@@ -50,14 +59,50 @@ func (c *experimentStateControllerClient) SaveExperiment(ctx context.Context, in
 	return out, nil
 }
 
+func (c *experimentStateControllerClient) RunExperiment(ctx context.Context, in *RunExperimentRequest, opts ...grpc.CallOption) (*RunExperimentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RunExperimentResponse)
+	err := c.cc.Invoke(ctx, ExperimentStateController_RunExperiment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *experimentStateControllerClient) MarkExperimentFailed(ctx context.Context, in *MarkExperimentFailedRequest, opts ...grpc.CallOption) (*MarkExperimentFailedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MarkExperimentFailedResponse)
+	err := c.cc.Invoke(ctx, ExperimentStateController_MarkExperimentFailed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *experimentStateControllerClient) MarkExperimentSuccessful(ctx context.Context, in *MarkExperimentSuccessfulRequest, opts ...grpc.CallOption) (*MarkExperimentSuccessfulResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MarkExperimentSuccessfulResponse)
+	err := c.cc.Invoke(ctx, ExperimentStateController_MarkExperimentSuccessful_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ExperimentStateControllerServer is the server API for ExperimentStateController service.
 // All implementations must embed UnimplementedExperimentStateControllerServer
 // for forward compatibility
 //
 // The experiment executor service definition.
 type ExperimentStateControllerServer interface {
-	// executes an experiment
+	// persists experiment
 	SaveExperiment(context.Context, *SaveExperimentRequest) (*SaveExperimentResponse, error)
+	// run experiment
+	RunExperiment(context.Context, *RunExperimentRequest) (*RunExperimentResponse, error)
+	// mark failed
+	MarkExperimentFailed(context.Context, *MarkExperimentFailedRequest) (*MarkExperimentFailedResponse, error)
+	// mark successful
+	MarkExperimentSuccessful(context.Context, *MarkExperimentSuccessfulRequest) (*MarkExperimentSuccessfulResponse, error)
 	mustEmbedUnimplementedExperimentStateControllerServer()
 }
 
@@ -67,6 +112,15 @@ type UnimplementedExperimentStateControllerServer struct {
 
 func (UnimplementedExperimentStateControllerServer) SaveExperiment(context.Context, *SaveExperimentRequest) (*SaveExperimentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveExperiment not implemented")
+}
+func (UnimplementedExperimentStateControllerServer) RunExperiment(context.Context, *RunExperimentRequest) (*RunExperimentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RunExperiment not implemented")
+}
+func (UnimplementedExperimentStateControllerServer) MarkExperimentFailed(context.Context, *MarkExperimentFailedRequest) (*MarkExperimentFailedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkExperimentFailed not implemented")
+}
+func (UnimplementedExperimentStateControllerServer) MarkExperimentSuccessful(context.Context, *MarkExperimentSuccessfulRequest) (*MarkExperimentSuccessfulResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkExperimentSuccessful not implemented")
 }
 func (UnimplementedExperimentStateControllerServer) mustEmbedUnimplementedExperimentStateControllerServer() {
 }
@@ -100,6 +154,60 @@ func _ExperimentStateController_SaveExperiment_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ExperimentStateController_RunExperiment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunExperimentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExperimentStateControllerServer).RunExperiment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExperimentStateController_RunExperiment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExperimentStateControllerServer).RunExperiment(ctx, req.(*RunExperimentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExperimentStateController_MarkExperimentFailed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkExperimentFailedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExperimentStateControllerServer).MarkExperimentFailed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExperimentStateController_MarkExperimentFailed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExperimentStateControllerServer).MarkExperimentFailed(ctx, req.(*MarkExperimentFailedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExperimentStateController_MarkExperimentSuccessful_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkExperimentSuccessfulRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExperimentStateControllerServer).MarkExperimentSuccessful(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExperimentStateController_MarkExperimentSuccessful_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExperimentStateControllerServer).MarkExperimentSuccessful(ctx, req.(*MarkExperimentSuccessfulRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ExperimentStateController_ServiceDesc is the grpc.ServiceDesc for ExperimentStateController service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -110,6 +218,18 @@ var ExperimentStateController_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SaveExperiment",
 			Handler:    _ExperimentStateController_SaveExperiment_Handler,
+		},
+		{
+			MethodName: "RunExperiment",
+			Handler:    _ExperimentStateController_RunExperiment_Handler,
+		},
+		{
+			MethodName: "MarkExperimentFailed",
+			Handler:    _ExperimentStateController_MarkExperimentFailed_Handler,
+		},
+		{
+			MethodName: "MarkExperimentSuccessful",
+			Handler:    _ExperimentStateController_MarkExperimentSuccessful_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

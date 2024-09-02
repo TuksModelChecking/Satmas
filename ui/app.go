@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"ui/go/api"
+	"ui/go/codegen/ui/proto"
 	"ui/go/experiment"
+	"ui/go/mra"
 
 	"github.com/wailsapp/wails/v2/pkg/logger"
 )
@@ -14,27 +16,34 @@ type App struct {
 	ctx        context.Context
 	logger     logger.Logger
 	grpcServer api.GRPCServer
-	*experiment.Manager
-	*experiment.Store
+	*experiment.ExperimentStateControllerTSAdaptor
+	experiment.ExperimentMetadataReader
 }
 
 func NewApp(
 	logger logger.Logger,
 	grpcServer api.GRPCServer,
-	experimentManager *experiment.Manager,
-	experimentStore *experiment.Store,
+	experimentStateController *experiment.ExperimentStateControllerTSAdaptor,
+	experimentMetadataReader experiment.ExperimentMetadataReader,
 ) *App {
 	return &App{
-		logger:     logger,
-		grpcServer: grpcServer,
-		Manager:    experimentManager,
-		Store:      experimentStore,
+		logger:                             logger,
+		grpcServer:                         grpcServer,
+		ExperimentStateControllerTSAdaptor: experimentStateController,
+		ExperimentMetadataReader:           experimentMetadataReader,
 	}
 }
 
 // startup is called at application startup
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	a.ExperimentStateControllerTSAdaptor.SetAppContext(ctx)
+
+	if err := a.ExperimentMetadataReader.InitialiseReader(); err != nil {
+		a.logger.Fatal(
+			fmt.Sprintf("error could not initialise experiment metadata reader: %s", err),
+		)
+	}
 
 	// start grpc server in separate thread (blocking operation)
 	go func() {
@@ -53,6 +62,9 @@ func (a App) domReady(ctx context.Context) {
 // either by clicking the window close button or calling runtime.Quit.
 // Returning true will cause the application to continue, false will continue shutdown as normal.
 func (a *App) beforeClose(ctx context.Context) (prevent bool) {
+	if err := a.ExperimentMetadataReader.CloseReader(); err != nil {
+		a.logger.Fatal(fmt.Sprintf("error closing experiment metadata reader: %s", err))
+	}
 	return false
 }
 
@@ -61,4 +73,15 @@ func (a *App) shutdown(ctx context.Context) {
 	if err := a.grpcServer.StopServer(); err != nil {
 		a.logger.Fatal(fmt.Sprintf("error stopping app grpc server: %s", err))
 	}
+	if err := a.ExperimentMetadataReader.CloseReader(); err != nil {
+		a.logger.Fatal(fmt.Sprintf("error closing experiment metadata reader: %s", err))
+	}
+}
+
+// utility functions
+func (a *App) GenerateMRA(agents []*proto.Agent, resources []string) *mra.MRA {
+	return mra.NewMRA(
+		agents,
+		resources,
+	)
 }

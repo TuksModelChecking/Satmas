@@ -8,16 +8,33 @@ import "experiment/experiment.proto";
 
 // The experiment executor service definition.
 service ExperimentStateController {
-  // executes an experiment
+  // persists experiment
   rpc SaveExperiment(SaveExperimentRequest) returns (SaveExperimentResponse) {}
 
-  // mark successful
+  // run experiment
+  rpc RunExperiment(RunExperimentRequest) returns (RunExperimentResponse) {}
 
   // mark failed
+  rpc MarkExperimentFailed(MarkExperimentFailedRequest)
+      returns (MarkExperimentFailedResponse) {}
 
-  // mark running
+  // mark successful
+  rpc MarkExperimentSuccessful(MarkExperimentSuccessfulRequest)
+      returns (MarkExperimentSuccessfulResponse) {}
 }
 
 message SaveExperimentRequest { Experiment experiment = 1; }
 
-message SaveExperimentResponse {}
+message SaveExperimentResponse { Experiment experiment = 1; }
+
+message RunExperimentRequest { Experiment experiment = 1; }
+
+message RunExperimentResponse {}
+
+message MarkExperimentFailedRequest { string id = 1; }
+
+message MarkExperimentFailedResponse {}
+
+message MarkExperimentSuccessfulRequest { string id = 2; }
+
+message MarkExperimentSuccessfulResponse {}

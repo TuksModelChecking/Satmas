@@ -10,16 +10,16 @@ def calculate_max_epsilon(ratios):
     return max(ratios)
 
 def on_iteration(*args):
-    print("Iteration")
+    print("Iteration: ", args)
 
 def on_successful(*args):
-    print("Success")
+    print("Success: ", args)
 
 def on_failed(*args):
-    print("Failed")
+    print("Failed: ", args)
 
 class ExperimentExecutor(ExperimentExecutorServicer):
-    def __init__(self) -> None:
+    def __init__(self, experimentStateController) -> None:
         super().__init__()
         self.nashSynthesiser = NashSynthesiser(
             on_iteration=on_iteration,
@@ -31,6 +31,7 @@ class ExperimentExecutor(ExperimentExecutorServicer):
             on_successful=on_successful,
             on_failed=on_failed,
         )
+        self.experimentStateController = experimentStateController
 
     def ExecuteExperiment(self, request: ExecuteExperimentRequest, context):
         # 1. prepare agents & resources
@@ -64,24 +65,33 @@ class ExperimentExecutor(ExperimentExecutorServicer):
             ),
             k=request.experiment.timebound,
         )
-        print("HERE!")
 
         # execute
         def perform():
-            if request.experiment.algorithm == SynthesisAlgorithm.EPSILONNASHEQUILIBRIUM:
-                res = self.epsilonNashSynthesiser.find_epsilon_ne(mraProblem, calculate_max_epsilon, request.experiment.numberOfIterations)
-                print(res)
-            elif request.experiment.algorithm == SynthesisAlgorithm.NASHEQUILIBRIUM:
-                res = self.nashSynthesiser.find_ne(mraProblem)
-                print(res)
-            elif request.experiment.algorithm == SynthesisAlgorithm.COLLECTIVE:
-                print("COLLECTIVE")
-            else:
-                print("UNKNOWN")
+            try:
+                if request.experiment.algorithm == SynthesisAlgorithm.EPSILONNASHEQUILIBRIUM:
+                    res = self.epsilonNashSynthesiser.find_epsilon_ne(mraProblem, calculate_max_epsilon, request.experiment.numberOfIterations)
+                    print(res)
+                    self.experimentStateController.MarkTransactionSuccessful(request.experiment.id)
+                elif request.experiment.algorithm == SynthesisAlgorithm.NASHEQUILIBRIUM:
+                    res = self.nashSynthesiser.find_ne(mraProblem)
+                    print("Res:",res,"\n")
+                    self.experimentStateController.MarkTransactionSuccessful(request.experiment.id)
+                    if res == None or res == False:
+                        self.experimentStateController.MarkTransactionFailed(request.experiment.id)
+                    else:
+                        self.experimentStateController.MarkTransactionSuccessful(request.experiment.id)
+                elif request.experiment.algorithm == SynthesisAlgorithm.COLLECTIVE:
+                    self.experimentStateController.MarkTransactionSuccessful(request.experiment.id)
+                else:
+                    print("UNKNOWN")
+            except Exception as e:
+                self.experimentStateController.MarkTransactionFailed(request.experiment.id)
+                print("error during experiment execution:", e)
+            
 
         # TODO: Use worker pool
         thread = threading.Thread(target=perform)
         thread.start()
-        thread.join()
 
         return ExecuteExperimentResponse(running=True)

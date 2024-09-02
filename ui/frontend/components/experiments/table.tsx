@@ -7,6 +7,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
+import { TooltipProvider } from "@radix-ui/react-tooltip"
+import { experiment } from "@/wailsjs/wailsjs/go/models"
 
 type ExperimentTableProps<TData, TValue> = {
     columns: ColumnDef<TData, TValue>[]
@@ -21,7 +24,7 @@ const ExperimentTable = <TData, TValue>({ columns, data }: ExperimentTableProps<
     })
 
     return (
-        <div className="rounded-md border">
+        <div className="rounded-md border sm:max-h-[180px] md:max-h-[180px] lg:max-h-[210px] overflow-scroll">
             <Table>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
@@ -42,18 +45,31 @@ const ExperimentTable = <TData, TValue>({ columns, data }: ExperimentTableProps<
                     ))}
                 </TableHeader>
                 <TableBody>
-                    {table.getRowModel().rows?.length ? (
+                    {data?.length > 0 && table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
-                            <TableRow
-                                key={row.id}
-                                data-state={row.getIsSelected() && "selected"}
-                            >
-                                {row.getVisibleCells().map((cell) => (
-                                    <TableCell key={cell.id}>
-                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                    </TableCell>
-                                ))}
-                            </TableRow>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <TableRow
+                                            key={row.id}
+                                            data-state={row.getIsSelected() && "selected"}
+                                        >
+                                            {row.getVisibleCells().map((cell) => (
+                                                <TableCell key={cell.id}>
+                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="flex flex-col">
+                                            <p>{new Date((data[Number(row.id)] as experiment.Metadata).createdAt).toISOString()}</p>
+                                            <p>{(data[Number(row.id)] as experiment.Metadata).id}</p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+
+                            </TooltipProvider>
                         ))
                     ) : (
                         <TableRow>
