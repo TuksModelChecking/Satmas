@@ -20,15 +20,16 @@
         [x] Return immediately so that store can update state to running
         [x] Update experiment when done
 
-## MVP: Collectively optimal strategy synthesis
-[]
-    [] Add collectively optimal stratey synthesis
-
 ## MVP: Strategy Viewer
 [] Strategy viewer
+    [] Get path from synthesis result
     [] Get strategies from grpc API
     [] Persist strategies
     [] Show strategies
+
+## MVP: Collectively optimal strategy synthesis
+[]
+    [] Add collectively optimal stratey synthesis
 
 ## Nice to haves
 []

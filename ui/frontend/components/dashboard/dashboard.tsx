@@ -31,7 +31,6 @@ export function Dashboard() {
   const fetchMetadata = useExperimentMetadata((state) => state.fetchAllMetadata);
   const [submittingExperiment, setSubmittingExperiment] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [eventReceived, setEventReceived] = useState(false);
   const [metadata, setMetadata] = useState<Array<experiment.Metadata>>([]);
 
   const handleFetchMetadata = async () => {
@@ -64,7 +63,7 @@ export function Dashboard() {
         toast.error("error fetching experiment metadata")
       }
     })()
-  }, [saving, eventReceived])
+  }, [saving])
 
   const handleRunExperiment = async () => {
     setSubmittingExperiment(true);

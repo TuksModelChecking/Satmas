@@ -11,6 +11,7 @@ class NashSynthesiser:
 
     def find_ne(self, problem: Problem) -> bool:
         # Encode Problem for solver
+        problem.k = problem.k - 1
         valid, encoding = encode_mra(problem.mra, problem.k) 
         if valid == False:
             return False
@@ -69,7 +70,7 @@ class NashSynthesiser:
                 continue
 
             # TODO: VERIFY THIS!
-            (curr_strategy_profile, curr_goal_map) = res
+            (curr_strategy_profile, _, curr_goal_map) = res
             # curr_goal_map = h_count_relall(curr_strategy_profile, agt.id, curr_goal_map)
             
             # Build full strategy
@@ -87,11 +88,6 @@ class NashSynthesiser:
             if curr_goal_map[agt.id] > prev_goal_map[agt.id]:
                 print(f" - Found better higher payoff strategy for {agt.id}")
                 print()
-                # if curr_strategy_profile in past_strategies:
-                #     return None
-
-                # Record new strategy profile
-                past_strategies.append(curr_strategy_profile)
 
                 # Update strategy for agent with new one which yields a better payoff value
                 prev_strategy_profile[agt.id] = curr_strategy_profile[agt.id]

@@ -1,4 +1,5 @@
 import threading
+from typing import List
 from .experimentExecutor_pb2 import ExecuteExperimentRequest, ExecuteExperimentResponse
 from .experimentExecutor_pb2_grpc import ExperimentExecutorServicer
 from Algorithm.NE.iterativeEpsilonNash import EpsilonNashSynthesiser
@@ -34,13 +35,25 @@ class ExperimentExecutor(ExperimentExecutorServicer):
         self.experimentStateController = experimentStateController
 
     def ExecuteExperiment(self, request: ExecuteExperimentRequest, context):
-        # 1. prepare agents & resources
-        agents = []
+        # prepare resources
         resources: set = set()
+        for protoAgent in request.experiment.mra.agents:
+            # add resources
+            for resource in protoAgent.acc:
+                resources.add(int(resource))
+
+        # normalise resource ids
+        normalisedResourceIDs = {}
+        resourceID = 1
+        for oldResourceID in sorted(resources):
+            normalisedResourceIDs[oldResourceID] = resourceID
+            resourceID += 1
+
+        # set agent accessibility 
+        agents: List[Agent] = []
         id = 0;
         for protoAgent in request.experiment.mra.agents:
             id += 1
-            
             # prepare agent
             agent = Agent(
                 id=id,         
@@ -48,19 +61,19 @@ class ExperimentExecutor(ExperimentExecutorServicer):
                 d=protoAgent.demand
             )
 
-            # add resource access
+            # set resource accessibility
             for resource in protoAgent.acc:
-                agent.acc.append(int(resource))
-                resources.add(int(resource))
+                agent.acc.append(normalisedResourceIDs[int(resource)])
 
-            # add agent
+            # append agent
             agents.append(agent)
-
+                
+        print("AFTER!")
         # prepare problem
         mraProblem = Problem(
             mra=MRA(
                 agt=agents,
-                res=resources,
+                res=normalisedResourceIDs.values(),
                 coalition=[],
             ),
             k=request.experiment.timebound,

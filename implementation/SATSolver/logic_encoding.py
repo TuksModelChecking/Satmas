@@ -7,7 +7,7 @@ from pyeda.inter import *
 from pyeda.boolalg.expr import expr2dimacscnf
 
 from Problem.agent import Agent, AgentAlias
-from Problem.problem import MRA
+from Problem.problem import MRA, Problem
 
 # Let "Paper" be used to denote the SMBF2021 submission by Nils Timm and Josua Botha
 # Let "Paper 2" be used to denote the follow-up journal paper, by the same authors.
@@ -167,7 +167,7 @@ def split_by_timestep_group(state_vars, split_var):
             timestep_group[timestep] = [(var, state_vars[var])]
     return timestep_group
 
-def group_by_assignment(timestep_group, split_var):
+def group_by_assignment(timestep_group, split_var) -> List[dict]:
     resource_at_timesteps = []
 
     for timestep in timestep_group:
@@ -727,19 +727,76 @@ def action_as_words(action_num: int) -> str:
     else:
         return f"rel_r{int((action_num - 1) / 2)}"
 
+def get_execution_path(problem: Problem, var_assignment_map: dict):
+    # prepare container for state propositional logic formulas 
+    state_vars = {}
+
+    # prepare container for agent propositional logic formulas
+    agent_vars = {}
+
+    # prepare container for agent goal propositional logic formulas
+    agent_goals = {}
+
+    # remove auxillary vars
+    delete = [key for key in var_assignment_map if 'aux' in key]
+    for var in delete:
+        del var_assignment_map[var]
+
+    # extract necessary variables
+    for var in var_assignment_map:
+        if var[0] == 't': 
+            if var.__contains__('r'):
+                state_vars[var] = var_assignment_map[var]
+            elif var.__contains__('act_a'):
+                agent_vars[var] = var_assignment_map[var]
+            elif var.__contains__('_g_'):
+                agent_goals[var] = var_assignment_map[var]
+   
+    # Group resource states by timestep
+    resource_timestep_group = split_by_timestep_group(state_vars, 'r')
+
+    # create list of resource states where the index is the timestep
+    resources = group_by_assignment(resource_timestep_group, 'r') 
+        
+    # create index for quick lookup of agent entity via its ID 
+    agent_index = {}
+    for agt in problem.mra.agt:
+        agent_index[agt.id] = agt 
+        
+    print(resources[0])
+    for i in range(1, len(resources)):
+        currentState = resources[i]
+        prevState = resources[i-1]
+
+        # get difference vector between current state and previous state
+        diff = {}
+        for resourceID in currentState:
+            diff[resourceID] = currentState[resourceID] - prevState[resourceID] 
+
+        actionList = {}
+        for resourceID in diff:
+            # if the difference is greater than zero then a resource was requested by the agent
+            if diff[resourceID] > 0:
+                actionList[abs(diff[resourceID])] = f"req_r{resourceID}"
+            # if the difference is less than zero then the relall action was called
+            elif diff[resourceID] < 0: 
+                actionList[abs(diff[resourceID])] = f"relall" 
+        print(actionList)
+        print(currentState)        
+    
+    return resources
+
 def get_strategy_profile(problem, var_assignment_map):
     state_vars = {}
     agent_vars = {}
     agent_goals = {}
     
-    strat_actions = {}
-
-    # Remove auxillary vars
+    # remove auxillary vars
     delete = [key for key in var_assignment_map if 'aux' in key]
     for var in delete:
         del var_assignment_map[var]
 
-    # Extract necessary variables
+    # extract necessary variables
     for var in var_assignment_map:
         if var[0] == 't': 
             if var.__contains__('r'):
@@ -749,16 +806,16 @@ def get_strategy_profile(problem, var_assignment_map):
             elif var.__contains__('_g_'):
                 agent_goals[var] = var_assignment_map[var]
 
-    # Group resource states by timestep
+    # group resource states by timestep
     resource_timestep_group = split_by_timestep_group(state_vars, 'r')
 
-    # All resource states
+    # all resource states
     resources = group_by_assignment(resource_timestep_group, 'r')
 
     agent_action_timestep_group = split_by_timestep_group(agent_vars, 'act_a')
     agent_actions = group_by_assignment(agent_action_timestep_group, 'act_a')
 
-    # Calculate goal achievement frequency
+    # calculate goal achievement frequency
     goal_map = {}
     for agt in problem.mra.agt:
         goal_map[agt.id] = 0
@@ -770,7 +827,6 @@ def get_strategy_profile(problem, var_assignment_map):
 
     agent_observations = {}
     for resource_at_timestep in resources:
-        print(resource_at_timestep)
         for agent in problem.mra.agt:
             state_observations = []
             observation = ''
