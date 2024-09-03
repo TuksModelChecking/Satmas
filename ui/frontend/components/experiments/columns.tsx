@@ -1,5 +1,6 @@
 import { experiment } from "@/wailsjs/wailsjs/go/models";
 import { ColumnDef } from "@tanstack/react-table";
+import { Loader2 } from "lucide-react";
 
 export const columns: ColumnDef<experiment.Metadata>[] = [
     {
@@ -23,7 +24,15 @@ export const columns: ColumnDef<experiment.Metadata>[] = [
         accessorKey: "state",
         header: "State",
         cell: ({ cell, row }) => {
-            return <p>{row.original.state}</p>
+            if (row.original.state === "Pending") {
+                return <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            } else if (row.original.state === "Successful") {
+                return <p className="text-primary">{row.original.state}</p>
+            } else if (row.original.state === "Failed") {
+                return <p className="text-red-500">{row.original.state}</p>
+            } else {
+                <p>{row.original.state}</p>
+            }
         }
     },
 ];
