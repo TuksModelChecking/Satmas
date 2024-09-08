@@ -18,6 +18,7 @@ type App struct {
 	grpcServer api.GRPCServer
 	*experiment.ExperimentStateControllerTSAdaptor
 	experiment.ExperimentMetadataReader
+	experiment.ExperimentResultReader
 }
 
 func NewApp(
@@ -25,12 +26,14 @@ func NewApp(
 	grpcServer api.GRPCServer,
 	experimentStateController *experiment.ExperimentStateControllerTSAdaptor,
 	experimentMetadataReader experiment.ExperimentMetadataReader,
+	experimentResultReader experiment.ExperimentResultReader,
 ) *App {
 	return &App{
 		logger:                             logger,
 		grpcServer:                         grpcServer,
 		ExperimentStateControllerTSAdaptor: experimentStateController,
 		ExperimentMetadataReader:           experimentMetadataReader,
+		ExperimentResultReader:             experimentResultReader,
 	}
 }
 

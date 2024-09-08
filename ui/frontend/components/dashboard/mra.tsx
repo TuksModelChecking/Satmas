@@ -1,4 +1,4 @@
-import { ConnectionMode, MarkerType, Position, ReactFlow, addEdge, useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
+import { ConnectionMode, MarkerType, Position, ReactFlow, ReactFlowProvider, addEdge, useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { Toaster, toast } from "sonner";
 import {
   ContextMenu,
@@ -140,21 +140,23 @@ const MRA = () => {
       <ContextMenuTrigger>
         <div className="h-full w-full">
           <Toaster />
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodesDelete={onNodeDelete}
-            connectionMode={ConnectionMode.Loose}
-            fitView
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            defaultEdgeOptions={defaultEdgeOptions}
-            proOptions={proOptions}
-          >
-          </ReactFlow>
+          <ReactFlowProvider>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onNodesDelete={onNodeDelete}
+              connectionMode={ConnectionMode.Loose}
+              fitView
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              defaultEdgeOptions={defaultEdgeOptions}
+              proOptions={proOptions}
+            >
+            </ReactFlow>
+          </ReactFlowProvider>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-64">

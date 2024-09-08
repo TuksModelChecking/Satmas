@@ -139,7 +139,7 @@ func (e *ExperimentStateControllerImpl) MarkExperimentFailed(ctx context.Context
 func (e *ExperimentStateControllerImpl) MarkExperimentSuccessful(ctx context.Context, request *proto.MarkExperimentSuccessfulRequest) (*proto.MarkExperimentSuccessfulResponse, error) {
 	e.logger.Debug(
 		fmt.Sprintf(
-			"marking experiment successful id=%s",
+			"marking experiment successful %s",
 			request.Id,
 		),
 	)
@@ -151,7 +151,7 @@ func (e *ExperimentStateControllerImpl) MarkExperimentSuccessful(ctx context.Con
 	)
 	if err != nil {
 		e.logger.Error(
-			fmt.Sprintf("error retrieving experiment(id=%s): %s", request.Id, err.Error()),
+			fmt.Sprintf("error retrieving experiment %s: %s", request.Id, err.Error()),
 		)
 		return nil, fmt.Errorf("error retrieving experiment: %w", err)
 	}
@@ -164,14 +164,25 @@ func (e *ExperimentStateControllerImpl) MarkExperimentSuccessful(ctx context.Con
 		experiment,
 	); err != nil {
 		e.logger.Error(
-			fmt.Sprintf("error storing experiment(id=%s): %s", request.Id, err.Error()),
+			fmt.Sprintf("error storing experiment %s: %s", request.Id, err.Error()),
 		)
 		return nil, fmt.Errorf("error storing experiment: %w", err)
 	}
 
+	// store experiment result
+	if err := e.experimentStore.StoreResult(
+		experiment.Id,
+		request.Result,
+	); err != nil {
+		e.logger.Error(
+			fmt.Sprintf("error storing experiment result %s: %s", experiment.Id, err.Error()),
+		)
+		return nil, fmt.Errorf("error storing experiment result: %w", err)
+	}
+
 	// fire event
 	e.logger.Info(
-		fmt.Sprintf("firing experiment successful event for experiment(id=%s)", request.Id),
+		fmt.Sprintf("firing experiment successful event for experiment %s", request.Id),
 	)
 	runtime.EventsEmit(
 		e.appContext,

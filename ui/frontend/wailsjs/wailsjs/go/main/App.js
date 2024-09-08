@@ -18,6 +18,10 @@ export function ReadAllExperimentMetadata() {
   return window['go']['main']['App']['ReadAllExperimentMetadata']();
 }
 
+export function ReadExperimentResult(arg1) {
+  return window['go']['main']['App']['ReadExperimentResult'](arg1);
+}
+
 export function RunExperiment(arg1) {
   return window['go']['main']['App']['RunExperiment'](arg1);
 }

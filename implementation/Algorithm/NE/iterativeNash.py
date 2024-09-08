@@ -1,3 +1,4 @@
+from typing import Any, Tuple
 from Algorithm.NE.shared import run_solve
 from Problem.problem import Problem
 from SATSolver.solver import run_solver_for_encoding
@@ -9,12 +10,12 @@ class NashSynthesiser:
         self.on_successful = on_successful
         self.on_failed = on_failed
 
-    def find_ne(self, problem: Problem) -> bool:
+    def find_ne(self, problem: Problem) -> Tuple[bool, Any]:
         # Encode Problem for solver
-        problem.k = problem.k - 1
+        problem.k = problem.k + 1
         valid, encoding = encode_mra(problem.mra, problem.k) 
         if valid == False:
-            return False
+            return (False, None)
 
         # Perform initial solve
         satisfied, var_assignment_map = run_solver_for_encoding(encoding)
@@ -22,7 +23,7 @@ class NashSynthesiser:
         # If not satisfied a nash equilibrium for the mra scenario does not exist
         if not satisfied:
             self.on_failed("Encoding is not satifiable")
-            return False
+            return (False, None)
 
         # Get initial partial strategy profile
         prev_strategy_profile = []
@@ -41,7 +42,7 @@ class NashSynthesiser:
         past_strategies = []
         iteration = 0
         while True:
-            nashEqulibriumFound: bool = self.solve_for_agent_ne(
+            nashEqulibriumFound, path = self.solve_for_agent_ne(
                 problem, 
                 prev_strategy_profile, 
                 prev_goal_map, 
@@ -49,15 +50,15 @@ class NashSynthesiser:
             )
 
             if nashEqulibriumFound:
-                self.on_successful(prev_strategy_profile)
-                return True
+                self.on_successful(path)
+                return (True, path)
             elif nashEqulibriumFound == None:
                 break
 
             self.on_iteration(iteration)
 
         self.on_failed("Nash Equilibrium Could Not Be Found")
-        return None
+        return (None, None)
 
     def solve_for_agent_ne(self, problem, prev_strategy_profile, prev_goal_map, past_strategies):
         for agt in problem.mra.agt:
@@ -65,12 +66,12 @@ class NashSynthesiser:
             # Synthesise strategy for agt, by fixing strategies of other agents
             res = run_solve(problem, agt.id, prev_strategy_profile, {})
 
-            # Ignore it if a strategy can not be synthesised
+            # Ignore it if a strategy can not be synthesised (we will just keep the strategy as is for that agent)
             if res == None:
                 continue
 
             # TODO: VERIFY THIS!
-            (curr_strategy_profile, _, curr_goal_map) = res
+            (curr_strategy_profile, path, curr_goal_map) = res
             # curr_goal_map = h_count_relall(curr_strategy_profile, agt.id, curr_goal_map)
             
             # Build full strategy
@@ -95,6 +96,6 @@ class NashSynthesiser:
                 # Update new max goal map with the agent's higher payoff value
                 prev_goal_map[agt.id] = curr_goal_map[agt.id]
 
-                # NE unfortunately not yet reached
-                return False
-        return True
+                # NE unfortunately not yet been reached
+                return False, path
+        return True, path

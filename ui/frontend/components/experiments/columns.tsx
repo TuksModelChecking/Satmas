@@ -1,6 +1,9 @@
 import { experiment } from "@/wailsjs/wailsjs/go/models";
 import { ColumnDef } from "@tanstack/react-table";
-import { Loader2 } from "lucide-react";
+import { Check, EllipsisVertical, Loader2, X } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import Result from "./result";
+import Settings from "../appSettings/settings";
 
 export const columns: ColumnDef<experiment.Metadata>[] = [
     {
@@ -25,14 +28,21 @@ export const columns: ColumnDef<experiment.Metadata>[] = [
         header: "State",
         cell: ({ cell, row }) => {
             if (row.original.state === "Pending") {
-                return <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                return <Loader2 className="mx-2 h-4 w-4 animate-spin" />
             } else if (row.original.state === "Successful") {
-                return <p className="text-primary">{row.original.state}</p>
+                return (
+                    <div className="flex items-center">
+                        <Check className="mx-2 h-4 w-4 text-primary" />
+                        <Result experimentID={row.original.id}>
+                            <EllipsisVertical className="mr-2 h-4 w-4 cursor-pointer" />
+                        </Result>
+                    </div>
+                )
             } else if (row.original.state === "Failed") {
-                return <p className="text-red-500">{row.original.state}</p>
+                return <X className="mx-2 h-4 w-4 text-destructive" />
             } else {
                 <p>{row.original.state}</p>
             }
         }
-    },
+    }
 ];

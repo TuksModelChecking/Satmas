@@ -13,6 +13,8 @@ export function InitialiseReader():Promise<void>;
 
 export function ReadAllExperimentMetadata():Promise<Array<experiment.Metadata>>;
 
+export function ReadExperimentResult(arg1:string):Promise<experiment.TSExperimentResult>;
+
 export function RunExperiment(arg1:experiment.TSExperiment):Promise<void>;
 
 export function SaveExperiment(arg1:experiment.TSExperiment):Promise<void>;

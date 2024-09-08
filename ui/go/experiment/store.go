@@ -118,6 +118,95 @@ func (s *Store) RetrieveExperiment(ctx context.Context, experimentID string) (*p
 	return marshalledExperiment, err
 }
 
+func (s *Store) StoreResult(experimentID string, result *proto.ExperimentResult) error {
+	// determine where to write experiment result
+	experimentResultFilePath := s.getStoreRootPath(fmt.Sprintf("res-%s", experimentID))
+
+	// create file to hold experiment result
+	file, err := os.Create(experimentResultFilePath)
+	if err != nil {
+		s.logger.Error(
+			fmt.Sprintf("error creating file for experiment result %s: %s", experimentID, err.Error()),
+		)
+		return fmt.Errorf("error creating file for experiment result: %w", err)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			s.logger.Error(
+				fmt.Sprintf("error closing file for experiment %s: %s", experimentID, err.Error()),
+			)
+		}
+	}()
+
+	// marshal result
+	marshalledProto, err := googleProto.Marshal(result)
+	if err != nil {
+		s.logger.Error(
+			fmt.Sprintf("error marshalling experiment result %s: %s", experimentID, err.Error()),
+		)
+		return fmt.Errorf("error marshalling experiment result: %w", err)
+	}
+
+	// write marshalled result to file
+	if _, err := file.Write(marshalledProto); err != nil {
+		s.logger.Error(
+			fmt.Sprintf("error writing experiment result %s: %s", experimentID, err.Error()),
+		)
+		return fmt.Errorf("error writing experiment result: %w", err)
+	}
+
+	// update metadata for experiment
+	if err := s.writeExperimentResultMetadata(experimentID, experimentResultFilePath); err != nil {
+		s.logger.Error(
+			fmt.Sprintf("error updating experiment metadata %s: %s", experimentID, err),
+		)
+		return fmt.Errorf("error updating experiment metada")
+	}
+
+	return nil
+}
+
+func (s *Store) RetrieveResult(experimentID string) (*proto.ExperimentResult, error) {
+	experimentResultPath := s.getStoreRootPath(fmt.Sprintf("res-%s", experimentID))
+
+	data, err := os.ReadFile(experimentResultPath)
+	if err != nil {
+		s.logger.Error(
+			fmt.Sprintf("error reading experiment result file %s: %s", experimentResultPath, err.Error()),
+		)
+		return nil, fmt.Errorf("error reading experiment result file: %w", err)
+	}
+
+	// unmarshal to protobuf experiment type
+	marshalledExperimentResult := new(proto.ExperimentResult)
+	if err := googleProto.Unmarshal(data, marshalledExperimentResult); err != nil {
+		s.logger.Error(
+			fmt.Sprintf("error unmarshalling experiment result from file %s: %s", experimentResultPath, err.Error()),
+		)
+		return nil, fmt.Errorf("error unmarshalling experiment result from file: %s", err.Error())
+	}
+
+	return marshalledExperimentResult, nil
+}
+
+func (s *Store) writeExperimentResultMetadata(experimentID string, resultFilePath string) error {
+	experimentMetadata, found := s.experimentMetadata[experimentID]
+	if !found {
+		s.logger.Error(
+			fmt.Sprintf("error retrieving metadata for experiment %s", experimentID),
+		)
+		return fmt.Errorf("error retrieving metadata for experiment")
+	}
+
+	// update file path
+	experimentMetadata.PathToResult = resultFilePath
+
+	// update metadata entry
+	s.experimentMetadata[experimentID] = experimentMetadata
+
+	return nil
+}
+
 func (s *Store) RetrieveMetadataForExperiment(id string) (*Metadata, error) {
 	metadata, err := s.RetrieveMetadata()
 	if err != nil {

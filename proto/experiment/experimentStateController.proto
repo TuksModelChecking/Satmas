@@ -35,6 +35,24 @@ message MarkExperimentFailedRequest { string id = 1; }
 
 message MarkExperimentFailedResponse {}
 
-message MarkExperimentSuccessfulRequest { string id = 2; }
+message ResourceStateAtTimestemp {
+  repeated string resourceIDs = 1;
+  repeated int32 resourceStates = 2;
+}
+
+message ActionListAtTimestep {
+  repeated int32 agentIDs = 1;
+  repeated string actions = 2;
+}
+
+message ExperimentResult {
+  repeated ResourceStateAtTimestemp resourceStates = 1;
+  repeated ActionListAtTimestep actionList = 2;
+}
+
+message MarkExperimentSuccessfulRequest {
+  string id = 1;
+  ExperimentResult result = 2;
+}
 
 message MarkExperimentSuccessfulResponse {}

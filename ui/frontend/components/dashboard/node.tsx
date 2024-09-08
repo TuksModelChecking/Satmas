@@ -54,7 +54,7 @@ const Node = (props: any) => {
                     </ContextMenuContent>
                 }
             </ContextMenu>
-            <DialogContent>
+            <DialogContent aria-describedby="agent demand">
                 <DialogHeader>
                     <DialogTitle>Add Demand To Agent</DialogTitle>
                     <DialogDescription>

@@ -21,11 +21,11 @@
         [x] Update experiment when done
 
 ## MVP: Strategy Viewer
-[] Strategy viewer
-    [] Get path from synthesis result
-    [] Get strategies from grpc API
-    [] Persist strategies
-    [] Show strategies
+[x] Strategy viewer
+    [x] Get path from synthesis result
+    [x] Get strategies from grpc API
+    [x] Persist strategies
+    [x] Show strategies
 
 ## MVP: Collectively optimal strategy synthesis
 []

@@ -763,6 +763,7 @@ def get_execution_path(problem: Problem, var_assignment_map: dict):
     for agt in problem.mra.agt:
         agent_index[agt.id] = agt 
         
+    agentActions = []
     print(resources[0])
     for i in range(1, len(resources)):
         currentState = resources[i]
@@ -781,10 +782,18 @@ def get_execution_path(problem: Problem, var_assignment_map: dict):
             # if the difference is less than zero then the relall action was called
             elif diff[resourceID] < 0: 
                 actionList[abs(diff[resourceID])] = f"relall" 
+        
+        # check for idle action taken 
+        for agt in problem.mra.agt:
+            if agt.id not in actionList:
+                actionList[agt.id] = "idle"
+    
+        agentActions.append(actionList)
         print(actionList)
         print(currentState)        
+
     
-    return resources
+    return (resources, agentActions)
 
 def get_strategy_profile(problem, var_assignment_map):
     state_vars = {}

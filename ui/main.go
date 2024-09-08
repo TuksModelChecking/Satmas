@@ -69,6 +69,12 @@ func main() {
 		experimentStore,
 	)
 
+	// prepare experiment result reader
+	experimentResultReader := experiment.NewExperimentResultReaderImpl(
+		appLogger,
+		experimentStore,
+	)
+
 	app := NewApp(
 		appLogger,
 		grpcServer,
@@ -76,6 +82,7 @@ func main() {
 			experimentStateController,
 		),
 		experimentMetadataReader,
+		experimentResultReader,
 	)
 
 	// create application with options

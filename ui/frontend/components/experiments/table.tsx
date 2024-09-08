@@ -47,29 +47,16 @@ const ExperimentTable = <TData, TValue>({ columns, data }: ExperimentTableProps<
                 <TableBody>
                     {data?.length > 0 && table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <TableRow
-                                            key={row.id}
-                                            data-state={row.getIsSelected() && "selected"}
-                                        >
-                                            {row.getVisibleCells().map((cell) => (
-                                                <TableCell key={cell.id}>
-                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <div className="flex flex-col">
-                                            <p>{new Date((data[Number(row.id)] as experiment.Metadata).createdAt).toISOString()}</p>
-                                            <p>{(data[Number(row.id)] as experiment.Metadata).id}</p>
-                                        </div>
-                                    </TooltipContent>
-                                </Tooltip>
-
-                            </TooltipProvider>
+                            <TableRow
+                                key={row.id}
+                                data-state={row.getIsSelected() && "selected"}
+                            >
+                                {row.getVisibleCells().map((cell) => (
+                                    <TableCell key={cell.id}>
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
                         ))
                     ) : (
                         <TableRow>

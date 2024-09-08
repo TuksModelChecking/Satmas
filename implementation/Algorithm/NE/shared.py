@@ -32,4 +32,4 @@ def run_solve(problem: Problem, agent_not_fix_id = -1, strategy_profile = None, 
     # extract execution path 
     executionPath = get_execution_path(problem, vam)
         
-    return curr_strategy_profile, None, curr_goal_map
+    return curr_strategy_profile, executionPath, curr_goal_map

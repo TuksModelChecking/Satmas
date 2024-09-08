@@ -43,6 +43,20 @@ export namespace experiment {
 		    return a;
 		}
 	}
+	export class TSActionList {
+	    agentIDs: number[];
+	    actions: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TSActionList(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.agentIDs = source["agentIDs"];
+	        this.actions = source["actions"];
+	    }
+	}
 	export class TSExperiment {
 	    algorithm: string;
 	    mra?: proto.MRA;
@@ -61,6 +75,52 @@ export namespace experiment {
 	        this.numberOfIterations = source["numberOfIterations"];
 	        this.timebound = source["timebound"];
 	        this.message = source["message"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class TSResourceState {
+	    resourceIDs: string[];
+	    resourceStates: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TSResourceState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.resourceIDs = source["resourceIDs"];
+	        this.resourceStates = source["resourceStates"];
+	    }
+	}
+	export class TSExperimentResult {
+	    resourceStates: TSResourceState[];
+	    actionList: TSActionList[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TSExperimentResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.resourceStates = this.convertValues(source["resourceStates"], TSResourceState);
+	        this.actionList = this.convertValues(source["actionList"], TSActionList);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
