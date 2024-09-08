@@ -48,10 +48,12 @@
 
     [x] Show strategies
 
-## MVP: Collectively optimal strategy synthesis
+## MVP: Strategy Synthesis
 []
 
     [] Add collectively optimal stratey synthesis
+
+    [] Fix issue in epsilon nash equilibrium strategy synthesis
 
 ## Nice to haves
 []
