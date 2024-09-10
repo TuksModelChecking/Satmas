@@ -105,7 +105,7 @@ const Parameters = () => {
             <div className="grid grid-cols-2 gap-3">
                 <div>
                     <Label htmlFor="iterations">Number Of Iterations</Label>
-                    <Input id="iterations" type="number" placeholder="10" defaultValue={parameters.numberOfIterations} onChange={(e) => updateNumberOfIterations(e.target.value)} />
+                    <Input id="iterations" type="number" placeholder="10" disabled={parameters.algorithm.toString() !== proto.SynthesisAlgorithm.EPSILON_NASH_EQUILIBRIUM.toString()} defaultValue={parameters.numberOfIterations} onChange={(e) => updateNumberOfIterations(e.target.value)} />
                 </div>
                 <div>
                     <Label htmlFor="timebound">Timebound (K)</Label>

@@ -68,7 +68,7 @@ const Result = ({ experimentID, children }: ResultProps) => {
             const sourceID = idx
             let targetID = idx + 1
             const nodeID = getNodeID();
-            if (targetID !== actionList.length) {
+            if (targetID !== actionList.length + 1) {
                 return {
                     id: nodeID,
                     source: sourceID.toString(),
@@ -121,7 +121,6 @@ const Result = ({ experimentID, children }: ResultProps) => {
                     const experimentResult = await ReadExperimentResult(experimentID);
                     setNodes(createNodes(experimentResult.resourceStates));
                     setEdges(createEdges(experimentResult.actionList));
-                    console.log("CALLED SET: ", experimentResult.actionList.length)
                 } catch (e) {
                     toast.error(
                         "error reading experiment result"

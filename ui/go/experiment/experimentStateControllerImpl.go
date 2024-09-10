@@ -133,6 +133,18 @@ func (e *ExperimentStateControllerImpl) MarkExperimentFailed(ctx context.Context
 		return nil, fmt.Errorf("error storing experiment: %w", err)
 	}
 
+	// fire event
+	e.logger.Info(
+		fmt.Sprintf("firing experiment failed event for experiment %s", request.Id),
+	)
+	runtime.EventsEmit(
+		e.appContext,
+		"experimentFailed",
+		map[string]string{
+			"id": request.Id,
+		},
+	)
+
 	return &proto.MarkExperimentFailedResponse{}, nil
 }
 

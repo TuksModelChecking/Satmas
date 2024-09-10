@@ -43,14 +43,21 @@ export function Dashboard() {
   };
 
   useEffect(() => {
-    const cancel = EventsOn("experimentSuccessful", (data) => {
-      toast(`Got an event with ${data.id}`);
+    const cancelSuccess = EventsOn("experimentSuccessful", (data) => {
+      toast(`Experiment ${data.id} Successful`);
       console.debug("event: experiment successful");
       handleFetchMetadata();
     });
 
+    const cancelFailed = EventsOn("experimentFailed", (data) => {
+      toast(`Experiment ${data.id} Failed`);
+      console.debug("event: experiment failed");
+      handleFetchMetadata();
+    });
+
     return () => {
-      cancel();
+      cancelSuccess();
+      cancelFailed();
     }
   }, [])
 
@@ -87,26 +94,6 @@ export function Dashboard() {
     }
   };
 
-  const handleSaveExperiment = async () => {
-    setSaving(true);
-    const listOfAgents = Array.from(agents.values());
-    const listOfResources = Array.from(resources.values());
-
-    try {
-      const newMRA = await GenerateMRA(listOfAgents, listOfResources)
-      const tsExperiment = new experiment.TSExperiment();
-      tsExperiment.algorithm = parameters.algorithm.toString();
-      tsExperiment.numberOfIterations = parameters.numberOfIterations.toString();
-      tsExperiment.timebound = parameters.timebound.toString();
-      tsExperiment.mra = newMRA;
-      await SaveExperiment(tsExperiment);
-    } catch (e) {
-      toast.error(`Something went wrong trying to run the experiment: ${e}`);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div className="grid h-[80vh] w-full pl-[56px]">
       <Toaster />
@@ -115,9 +102,6 @@ export function Dashboard() {
         <header className="sticky top-0 z-10 flex h-[57px] items-center justify-between gap-1 border-b bg-background px-4">
           <h1 className="text-xl font-semibold">Experiment Runner</h1>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={handleSaveExperiment} disabled={saving}>
-              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Experiment
-            </Button>
             <Button onClick={handleRunExperiment} disabled={submittingExperiment}>
               {submittingExperiment ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />} Run Experiment
             </Button>

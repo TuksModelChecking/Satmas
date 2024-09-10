@@ -1,14 +1,16 @@
 import threading
 from typing import List
 
+from Algorithm.NE.iterativeEpsilonNash import EpsilonNashSynthesiser
+from Algorithm.NE.iterativeNash import NashSynthesiser
+from Algorithm.Collective.collective import CollectiveSynthesiser
+from Problem.problem import Problem, MRA, Agent
+
+from mra.algorithm_pb2 import SynthesisAlgorithm
+from .experimentStateControllerGRPCClient import ExperimentStateControllerGRPCClient
 from .experimentStateController_pb2 import ActionListAtTimestep, ExperimentResult, ResourceStateAtTimestemp
 from .experimentExecutor_pb2 import ExecuteExperimentRequest, ExecuteExperimentResponse
 from .experimentExecutor_pb2_grpc import ExperimentExecutorServicer
-from Algorithm.NE.iterativeEpsilonNash import EpsilonNashSynthesiser
-from Algorithm.NE.iterativeNash import NashSynthesiser
-from Problem.problem import Problem, MRA, Agent
-from mra.algorithm_pb2 import SynthesisAlgorithm
-from .experimentStateControllerGRPCClient import ExperimentStateControllerGRPCClient
 
 def calculate_max_epsilon(ratios):
     return max(ratios)
@@ -31,6 +33,11 @@ class ExperimentExecutor(ExperimentExecutorServicer):
             on_failed=on_failed,
         )
         self.epsilonNashSynthesiser = EpsilonNashSynthesiser(
+            on_iteration=on_iteration,
+            on_successful=on_successful,
+            on_failed=on_failed,
+        )
+        self.collectiveSynthesiser = CollectiveSynthesiser(
             on_iteration=on_iteration,
             on_successful=on_successful,
             on_failed=on_failed,
@@ -85,11 +92,41 @@ class ExperimentExecutor(ExperimentExecutorServicer):
         def perform():
             try:
                 if request.experiment.algorithm == SynthesisAlgorithm.EPSILONNASHEQUILIBRIUM:
-                    res = self.epsilonNashSynthesiser.find_epsilon_ne(mraProblem, calculate_max_epsilon, request.experiment.numberOfIterations)
-                    print(res)
+                    _, path = self.epsilonNashSynthesiser.find_epsilon_ne(mraProblem, calculate_max_epsilon, request.experiment.numberOfIterations)
+                    if path == None:
+                        self.experimentStateController.MarkExperimentFailed(
+                            request.experiment.id,
+                        )
+                        return 
+                    
+                    # collect resource ids & states
+                    resourceStates = []
+                    for resourceState in path[0]:
+                        resourceStates.append(
+                            ResourceStateAtTimestemp(
+                                resourceIDs=resourceState.keys(),
+                                resourceStates=resourceState.values(),
+                            )
+                        )
+
+                    # collect agent ids & actions 
+                    actionList = []
+                    for agtAction in path[1]:
+                        actionList.append(
+                            ActionListAtTimestep(
+                                agentIDs=agtAction.keys(),
+                                actions=agtAction.values(),
+                            )
+                        )
+
                     self.experimentStateController.MarkExperimentSuccessful(
                         request.experiment.id,
-                    )
+                        ExperimentResult(
+                            resourceStates=resourceStates,
+                            actionList=actionList,
+                        )
+                    ) 
+
                 elif request.experiment.algorithm == SynthesisAlgorithm.NASHEQUILIBRIUM:
                     found, path = self.nashSynthesiser.find_ne(mraProblem)
                     if not found:
@@ -124,7 +161,38 @@ class ExperimentExecutor(ExperimentExecutorServicer):
                         )
                     )
                 elif request.experiment.algorithm == SynthesisAlgorithm.COLLECTIVE:
-                    self.experimentStateController.MarkExperimentSuccessful(request.experiment.id)
+                    _, path = self.collectiveSynthesiser.find_collective(mraProblem)
+                    if path == None:
+                        self.experimentStateController.MarkExperimentFailed(request.experiment.id)
+                        return
+
+                    # collect resource ids & states
+                    resourceStates = []
+                    for resourceState in path[0]:
+                        resourceStates.append(
+                            ResourceStateAtTimestemp(
+                                resourceIDs=resourceState.keys(),
+                                resourceStates=resourceState.values(),
+                            )
+                        )
+
+                    # collect agent ids & actions 
+                    actionList = []
+                    for agtAction in path[1]:
+                        actionList.append(
+                            ActionListAtTimestep(
+                                agentIDs=agtAction.keys(),
+                                actions=agtAction.values(),
+                            )
+                        )
+
+                    self.experimentStateController.MarkExperimentSuccessful(
+                        request.experiment.id,
+                        ExperimentResult(
+                            resourceStates=resourceStates, 
+                            actionList=actionList,
+                        )
+                    )
                 else:
                     print("UNKNOWN")
             except Exception as e:

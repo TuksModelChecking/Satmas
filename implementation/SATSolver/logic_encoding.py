@@ -757,15 +757,17 @@ def get_execution_path(problem: Problem, var_assignment_map: dict):
 
     # create list of resource states where the index is the timestep
     resources = group_by_assignment(resource_timestep_group, 'r') 
-        
+
     # create index for quick lookup of agent entity via its ID 
     agent_index = {}
     for agt in problem.mra.agt:
         agent_index[agt.id] = agt 
         
     agentActions = []
-    print(resources[0])
+    resources[0] = dict(sorted(resources[0].items()))
     for i in range(1, len(resources)):
+        resources[i] = dict(sorted(resources[i].items())) 
+        resources[i-1] = dict(sorted(resources[i-1].items()))
         currentState = resources[i]
         prevState = resources[i-1]
 
@@ -781,18 +783,20 @@ def get_execution_path(problem: Problem, var_assignment_map: dict):
                 actionList[abs(diff[resourceID])] = f"req_r{resourceID}"
             # if the difference is less than zero then the relall action was called
             elif diff[resourceID] < 0: 
-                actionList[abs(diff[resourceID])] = f"relall" 
+                if problem.mra.agt[abs(diff[resourceID])-1].d == 1 or abs(diff[resourceID]) in actionList:
+                    actionList[abs(diff[resourceID])] = f"relall" 
+                else:
+                    actionList[abs(diff[resourceID])] = f"rel_r{resourceID}" 
         
         # check for idle action taken 
         for agt in problem.mra.agt:
             if agt.id not in actionList:
                 actionList[agt.id] = "idle"
     
-        agentActions.append(actionList)
+        agentActions.append(dict(sorted(actionList.items())))
         print(actionList)
         print(currentState)        
 
-    
     return (resources, agentActions)
 
 def get_strategy_profile(problem, var_assignment_map):

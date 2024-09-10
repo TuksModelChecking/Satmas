@@ -49,26 +49,30 @@
     [x] Show strategies
 
 ## MVP: Strategy Synthesis
-[]
+[x]
 
-    [] Add collectively optimal stratey synthesis
+    [x] Add collectively optimal stratey synthesis
 
-    [] Fix issue in epsilon nash equilibrium strategy synthesis
+    [x] Fix issue in epsilon nash equilibrium strategy synthesis
+
+    [] Fix sorting issue
+
+    [] Disable non-essential parameters for algorithms
 
 ## Nice to haves
 []
 
-    [] Upload yaml file
+    [] Basic Validations - Empty, Possibly checking connected components
 
-    [] Loading of experiment
-
-    [] Deleting experiment
-
-    [] Add execution time
+    [] Add execution time + Result
 
     [] Rate limiting - 1 experiment at a time with override of course
 
-    [] Basic Validations - Empty, Possibly checking connected components
+    [] Loading of experiment
+
+    [] Upload yaml file
+
+    [] Deleting experiment
 
     [] Config file
 

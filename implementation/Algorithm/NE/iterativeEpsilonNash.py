@@ -11,19 +11,23 @@ class EpsilonNashSynthesiser:
         self.on_failed = on_failed
 
     def find_epsilon_ne(self, problem: Problem, epsilon_policy, iterations):
-        (prev_strategy_profile, prev_goal_map) = run_solve(problem, -1, None, {})
+        (prev_strategy_profile, path, prev_goal_map) = run_solve(problem, -1, None, {})
 
         if prev_strategy_profile == None:
             self.on_failed("Encoding is not satifiable")
-            return
+            return (None, None)
 
         print(f"Initial Goal Map: {prev_goal_map}")
 
         minEpsilon = 999
+        minPath = None
         for i in range(iterations):
             print(f"------------------- Iteration {(i+1)}/{iterations} -------------------")
             # Search for alternate strategy, biased when weight_map is set
             weight_map,ratios = solve_for_agent_epsilon_ne(problem, prev_strategy_profile, prev_goal_map)
+
+            # Run solve normally with the updated weight map
+            psp, path, pgp = run_solve(problem, -1, None, h_build_variable_agent_weight_map(problem, weight_map))
 
             # Calculate epsilon
             epsilon = epsilon_policy(ratios)
@@ -31,19 +35,16 @@ class EpsilonNashSynthesiser:
             # Search for minimum epsilon
             if epsilon < minEpsilon:
                 minEpsilon = epsilon
-
-            # Run solve normally with the updated weight map
-            psp, pgp = run_solve(problem, -1, None, h_build_variable_agent_weight_map(problem, weight_map))
+                minPath = path
 
             # Set 'new' previous strategy profile and goal map
             prev_strategy_profile = psp
             prev_goal_map = pgp
 
             self.on_iteration(i, epsilon)
-
             
         self.on_successful(minEpsilon, prev_strategy_profile)
-        return "All good"
+        return (prev_strategy_profile, minPath)
 
 def solve_for_agent_epsilon_ne(problem, prev_strategy_profile, prev_goal_map):
     temp_weights = {}
@@ -51,7 +52,7 @@ def solve_for_agent_epsilon_ne(problem, prev_strategy_profile, prev_goal_map):
 
     for agt in problem.mra.agt:
         # Run solver, by fixing the strategies of the other agents except for agt
-        curr_strategy_profile, curr_goal_map = run_solve(problem, agt.id, prev_strategy_profile, {})
+        curr_strategy_profile, _, curr_goal_map = run_solve(problem, agt.id, prev_strategy_profile, {})
 
         if curr_goal_map[agt.id] > prev_goal_map[agt.id]:
             temp_goal_map[agt.id] = curr_goal_map[agt.id]
@@ -63,9 +64,13 @@ def solve_for_agent_epsilon_ne(problem, prev_strategy_profile, prev_goal_map):
     max_ratios = max(r.values())
     min_ratios = min(r.values())
 
+    denominator = max_ratios - min_ratios
+    if denominator == 0:
+        denominator = 1
+
     # calculate weight map
     for agt in problem.mra.agt:
-        temp_weights[agt.id] = math.floor(r[agt.id] * (10/(max_ratios - min_ratios)))
+        temp_weights[agt.id] = math.floor(r[agt.id] * (10/(denominator)))
     
     return temp_weights, r 
         
