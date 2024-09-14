@@ -62,13 +62,13 @@
 ## Nice to haves
 []
 
-    [] Basic Validations - Empty, Possibly checking connected components
+    [x] Loading of experiment
 
     [] Add execution time + Result
 
-    [] Rate limiting - 1 experiment at a time with override of course
+    [] Basic Validations - Empty, Possibly checking connected components
 
-    [] Loading of experiment
+    [] Rate limiting - 1 experiment at a time with override of course
 
     [] Upload yaml file
 
