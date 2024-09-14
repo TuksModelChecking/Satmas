@@ -19,6 +19,7 @@ type App struct {
 	*experiment.ExperimentStateControllerTSAdaptor
 	experiment.ExperimentMetadataReader
 	experiment.ExperimentResultReader
+	experiment.ExperimentReader
 }
 
 func NewApp(
@@ -27,6 +28,7 @@ func NewApp(
 	experimentStateController *experiment.ExperimentStateControllerTSAdaptor,
 	experimentMetadataReader experiment.ExperimentMetadataReader,
 	experimentResultReader experiment.ExperimentResultReader,
+	experimentReader experiment.ExperimentReader,
 ) *App {
 	return &App{
 		logger:                             logger,
@@ -34,6 +36,7 @@ func NewApp(
 		ExperimentStateControllerTSAdaptor: experimentStateController,
 		ExperimentMetadataReader:           experimentMetadataReader,
 		ExperimentResultReader:             experimentResultReader,
+		ExperimentReader:                   experimentReader,
 	}
 }
 

@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -23,7 +23,7 @@ import useExperimentState from "@/lib/experiment/experimentState"
 const Node = (props: any) => {
     const setAgentDemand = useExperimentState((state) => state.setAgentDemand);
     const [openDialog, setOpenDialog] = useState(false);
-    const [demand, setDemand] = useState(0);
+    const [demand, setDemand] = useState(props.data.demand);
 
     const handleDemandSubmission = () => {
         if (props.data.isAgent) {
@@ -36,7 +36,7 @@ const Node = (props: any) => {
         <Dialog open={openDialog} onOpenChange={() => setOpenDialog(!openDialog)}>
             <ContextMenu>
                 <ContextMenuTrigger>
-                    <div className="text-center w-[100px] h-[100px] rounded-full border-4 border-black border-solid flex items-center justify-center">
+                    <div className="text-center w-[100px] h-[100px] rounded-full border-4 border-black border-solid flex items-center justify-center" onClick={() => console.log("Click")}>
                         <span className="text-3xl">{props.data.isAgent ? "A" : "R"}{demand > 0 ? `: ${demand}` : ""}</span>
                         <Handle position={Position.Left} type="source" id={props.data.id + "_" + (props.data.isAgent ? "A" : "R") + "_l"} />
                         <Handle position={Position.Bottom} type="source" id={props.data.id + "_" + (props.data.isAgent ? "A" : "R") + "_b"} />

@@ -55,9 +55,9 @@
 
     [x] Fix issue in epsilon nash equilibrium strategy synthesis
 
-    [] Fix sorting issue
+    [x] Fix sorting issue
 
-    [] Disable non-essential parameters for algorithms
+    [x] Disable non-essential parameters for algorithms
 
 ## Nice to haves
 []

@@ -40,17 +40,23 @@ func main() {
 		toolConnection,
 	)
 
-	// create experiment store
+	// prepare experiment store
 	experimentStore := experiment.NewStore(
 		appLogger,
 		"./",
 	)
 
-	// create experiment state controller
+	// prepare experiment state controller
 	experimentStateController := experiment.NewExperimentStateControllerImpl(
 		appLogger,
 		experimentStore,
 		experimentExecutor,
+	)
+
+	// prepare experiment reader
+	experimentReader := experiment.NewExperimentReaderImpl(
+		appLogger,
+		experimentStore,
 	)
 
 	// create app grpc server
@@ -83,6 +89,7 @@ func main() {
 		),
 		experimentMetadataReader,
 		experimentResultReader,
+		experimentReader,
 	)
 
 	// create application with options

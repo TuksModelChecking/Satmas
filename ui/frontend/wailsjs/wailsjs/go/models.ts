@@ -43,18 +43,16 @@ export namespace experiment {
 		    return a;
 		}
 	}
-	export class TSActionList {
-	    agentIDs: number[];
-	    actions: string[];
+	export class ReadOneExperimentRequest {
+	    experimentID: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new TSActionList(source);
+	        return new ReadOneExperimentRequest(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.agentIDs = source["agentIDs"];
-	        this.actions = source["actions"];
+	        this.experimentID = source["experimentID"];
 	    }
 	}
 	export class TSExperiment {
@@ -95,6 +93,51 @@ export namespace experiment {
 		    return a;
 		}
 	}
+	export class ReadOneExperimentResponse {
+	    experiment: TSExperiment;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReadOneExperimentResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.experiment = this.convertValues(source["experiment"], TSExperiment);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class TSActionList {
+	    agentIDs: number[];
+	    actions: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TSActionList(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.agentIDs = source["agentIDs"];
+	        this.actions = source["actions"];
+	    }
+	}
+	
 	export class TSResourceState {
 	    resourceIDs: string[];
 	    resourceStates: number[];

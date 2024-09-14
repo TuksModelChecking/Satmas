@@ -22,6 +22,10 @@ export function ReadExperimentResult(arg1) {
   return window['go']['main']['App']['ReadExperimentResult'](arg1);
 }
 
+export function ReadOneExperiment(arg1) {
+  return window['go']['main']['App']['ReadOneExperiment'](arg1);
+}
+
 export function RunExperiment(arg1) {
   return window['go']['main']['App']['RunExperiment'](arg1);
 }

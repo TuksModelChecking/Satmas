@@ -85,6 +85,7 @@ export function Dashboard() {
       tsExperiment.numberOfIterations = parameters.numberOfIterations.toString();
       tsExperiment.timebound = parameters.timebound.toString();
       tsExperiment.mra = newMRA;
+      // tsExperiment.message = 
       await RunExperiment(tsExperiment);
     } catch (e) {
       toast.error(`Something went wrong trying to run the experiment: ${e}`);

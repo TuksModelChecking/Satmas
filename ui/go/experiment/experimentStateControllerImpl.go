@@ -94,6 +94,16 @@ func (e *ExperimentStateControllerImpl) RunExperiment(ctx context.Context, reque
 		e.logger.Error(
 			fmt.Sprintf("error storing experiment: %s", err.Error()),
 		)
+		if _, err := e.MarkExperimentFailed(
+			ctx,
+			&proto.MarkExperimentFailedRequest{
+				Id: saveExperimentResponse.Experiment.Id,
+			},
+		); err != nil {
+			e.logger.Error(
+				fmt.Sprintf("attempted to mark experiment failed after trying to run it: %s", err.Error()),
+			)
+		}
 		return nil, fmt.Errorf("error executing experiment: %w", err)
 	}
 

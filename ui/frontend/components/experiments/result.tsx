@@ -9,6 +9,7 @@ import Edge from "./edge";
 
 interface ResultProps {
     experimentID: string;
+    state: string;
     children: ReactNode;
 }
 
@@ -32,7 +33,7 @@ const defaultEdgeOptions = {
     },
 };
 
-const Result = ({ experimentID, children }: ResultProps) => {
+const Result = ({ experimentID, children, state }: ResultProps) => {
     let nodeID = 0;
     const getNodeID = () => `${nodeID++}`;
     const { screenToFlowPosition, getViewport } = useReactFlow();
@@ -115,7 +116,7 @@ const Result = ({ experimentID, children }: ResultProps) => {
     );
 
     useEffect(() => {
-        if (open) {
+        if (open && state === "Successful") {
             (async () => {
                 try {
                     const experimentResult = await ReadExperimentResult(experimentID);
@@ -139,27 +140,27 @@ const Result = ({ experimentID, children }: ResultProps) => {
             </SheetTrigger>
             <SheetContent side="bottom">
                 <SheetHeader>
-                    <SheetTitle>Path</SheetTitle>
-                    <SheetDescription>Click and drag to view the entire path</SheetDescription>
+                    <SheetTitle>Experiment Result</SheetTitle>
+                    <SheetDescription>{state === "Successful" ? "Experiment was successful" : "Experiment failed"}</SheetDescription>
                 </SheetHeader>
-                <div className="mt-3 h-[80vh] w-[90vw] bg-muted/50 rounded-xl">
-                    <ReactFlowProvider key={experimentID}>
-                        <ReactFlow
-                            nodes={nodes}
-                            nodeTypes={nodeTypes}
-                            onNodesChange={onNodesChange}
-                            edges={edges}
-                            edgeTypes={edgeTypes}
-                            onEdgesChange={onEdgesChange}
-                            connectionMode={ConnectionMode.Loose}
-                            onConnect={onConnect}
-                            defaultEdgeOptions={defaultEdgeOptions}
-                            proOptions={proOptions}
-                            fitView
-                        >
-                        </ReactFlow>
-                    </ReactFlowProvider>
-                </div>
+                {nodes.length > 0 &&
+                    <div className="mt-3 h-[80vh] w-[90vw] bg-muted/50 rounded-xl">
+                        <ReactFlowProvider key={experimentID}>
+                            <ReactFlow
+                                nodes={nodes}
+                                nodeTypes={nodeTypes}
+                                edges={edges}
+                                edgeTypes={edgeTypes}
+                                connectionMode={ConnectionMode.Loose}
+                                defaultEdgeOptions={defaultEdgeOptions}
+                                proOptions={proOptions}
+                                contentEditable={false}
+                                fitView
+                            >
+                            </ReactFlow>
+                        </ReactFlowProvider>
+                    </div>
+                }
             </SheetContent>
         </Sheet>
     );

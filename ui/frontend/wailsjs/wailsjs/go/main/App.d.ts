@@ -15,6 +15,8 @@ export function ReadAllExperimentMetadata():Promise<Array<experiment.Metadata>>;
 
 export function ReadExperimentResult(arg1:string):Promise<experiment.TSExperimentResult>;
 
+export function ReadOneExperiment(arg1:experiment.ReadOneExperimentRequest):Promise<experiment.ReadOneExperimentResponse>;
+
 export function RunExperiment(arg1:experiment.TSExperiment):Promise<void>;
 
 export function SaveExperiment(arg1:experiment.TSExperiment):Promise<void>;

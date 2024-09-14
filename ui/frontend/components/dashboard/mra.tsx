@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/context-menu"
 import Node from "./node";
 import { useHotkeys } from 'react-hotkeys-hook';
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import Edge from "./edge";
 import '@xyflow/react/dist/style.css';
 import useExperimentState from "@/lib/experiment/experimentState";
@@ -43,11 +43,16 @@ const defaultEdgeOptions = {
 };
 
 const MRA = () => {
+
   const addAgentToState = useExperimentState((state) => state.addAgent);
   const removeAgentFromState = useExperimentState((state) => state.removeAgent);
   const addResourceToState = useExperimentState((state) => state.addResource);
   const removeResourceFromState = useExperimentState((state) => state.removeResource);
   const addResourcesAccess = useExperimentState((state) => state.addResourceAccess);
+  const setAgentDemand = useExperimentState((state) => state.setAgentDemand);
+  const loaded = useExperimentState((state) => state.loaded);
+  const agents = useExperimentState((state) => state.agents);
+  const resources = useExperimentState((state) => state.resources);
 
   const { screenToFlowPosition, getViewport } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
@@ -55,15 +60,79 @@ const MRA = () => {
 
   useHotkeys('ctrl+a', () => { addAgent() })
   useHotkeys('ctrl+r', () => { addResource() })
+  useHotkeys("ctrl+c", () => { clear() })
 
-  const createNode = (data: { isAgent: boolean, id: string }) => {
+  const clear = () => {
+    nodeID = 1;
+    agentID = 1;
+    resourceID = 1;
+    setNodes([]);
+    setEdges([]);
+  }
+
+  useEffect(() => {
+    if (!loaded) {
+      return;
+    }
+    console.log("HEIIJOIJOJOI")
+    nodeID = 1;
+    agentID = 1;
+    resourceID = 1;
+    setNodes([]);
+    setEdges([]);
+
+    let initialX = getViewport().x / 4;
+    let initialY = getViewport().y / 4;
+    let index = 0;
+    const agentIDs: Map<proto.Agent, string> = new Map();
+    agents.forEach((agt) => {
+      const agtID = getAgentID()
+      agentIDs.set(agt, agtID);
+      setNodes((nds) => {
+        return [...nds, createNode({ isAgent: true, id: agt.id ?? "", demand: agt.demand, X: initialX, Y: initialY + (Number(agtID) * 150) })]
+      });
+      index++;
+      console.log(agtID + "A", " ", agt.demand);
+      setAgentDemand(agtID, agt.demand ?? 0);
+    });
+
+    index = 1;
+    const resourceIDs: Map<string, string> = new Map();
+    resources.forEach((r) => {
+      const res = getResourceID();
+      resourceIDs.set(r, res);
+      setNodes((nds) => {
+        return [...nds, createNode({ isAgent: false, id: res, X: initialX + 400, Y: initialY + (Number(res) * 150) })]
+      });
+      index++;
+    });
+
+    const edges: any = [];
+    agentIDs.forEach((agtID, agt) => {
+      agt.acc?.forEach((res) => {
+        edges.push({
+          id: agtID + "-" + res + getNodeID(),
+          source: agtID + "A",
+          target: resourceIDs.get(res) + "R",
+          sourceHandle: `${agtID}_A_r`,
+          targetHandle: `${resourceIDs.get(res)}_R_l`,
+          type: "floating",
+          markerEnd: { type: MarkerType.Arrow }
+        });
+      });
+    });
+
+    setEdges(edges);
+  }, [loaded]);
+
+  const createNode = (data: { isAgent: boolean, id: string, demand?: number, X?: number, Y?: number }) => {
     return {
-      id: getNodeID(),
+      id: data.id + (data.isAgent ? "A" : "R"),
       type: "custom",
       data: data,
       position: screenToFlowPosition({
-        x: getViewport().x,
-        y: getViewport().y,
+        x: data.X ?? 0,
+        y: data.Y ?? 0,
       }),
       className: "max-w-[100px]",
     };

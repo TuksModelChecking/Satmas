@@ -10,14 +10,26 @@ import { Input } from "@/components/ui/input";
 import { Rabbit, Turtle, Bird } from "lucide-react";
 import useExperimentState, { ExperimentStateType } from "@/lib/experiment/experimentState";
 import { proto } from "@/wailsjs/wailsjs/go/models";
+import { useEffect, useState } from "react";
 
 const Parameters = () => {
     const parameters = useExperimentState((state: unknown) => (state as ExperimentStateType).parameters);
     const setParameters = useExperimentState((state: unknown) => (state as ExperimentStateType).setParameters);
+    const [stateParameters, setParametersState] = useState(parameters);
+
+    useEffect(() => {
+        console.log("UPDATE!!!!");
+        console.log(parameters);
+        setParametersState(parameters);
+    }, [parameters])
 
     const updateAlgorithm = (value: unknown) => {
         setParameters({
             ...parameters,
+            algorithm: value as proto.SynthesisAlgorithm,
+        });
+        setParametersState({
+            ...stateParameters,
             algorithm: value as proto.SynthesisAlgorithm,
         });
     };
@@ -25,6 +37,10 @@ const Parameters = () => {
     const updateNumberOfIterations = (value: unknown) => {
         setParameters({
             ...parameters,
+            numberOfIterations: value as number,
+        });
+        setParametersState({
+            ...stateParameters,
             numberOfIterations: value as number,
         });
     };
@@ -43,7 +59,7 @@ const Parameters = () => {
             </legend>
             <div className="grid gap-3">
                 <Label htmlFor="model">Synthesis Algorithm</Label>
-                <Select defaultValue={parameters.algorithm.toString()} onValueChange={updateAlgorithm}>
+                <Select value={stateParameters.algorithm.toString()} defaultValue={stateParameters.algorithm.toString()} onValueChange={updateAlgorithm}>
                     <SelectTrigger
                         id="model"
                         className="items-start [&_[data-description]]:hidden"
@@ -105,11 +121,11 @@ const Parameters = () => {
             <div className="grid grid-cols-2 gap-3">
                 <div>
                     <Label htmlFor="iterations">Number Of Iterations</Label>
-                    <Input id="iterations" type="number" placeholder="10" disabled={parameters.algorithm.toString() !== proto.SynthesisAlgorithm.EPSILON_NASH_EQUILIBRIUM.toString()} defaultValue={parameters.numberOfIterations} onChange={(e) => updateNumberOfIterations(e.target.value)} />
+                    <Input id="iterations" type="number" placeholder="10" disabled={stateParameters.algorithm.toString() !== proto.SynthesisAlgorithm.EPSILON_NASH_EQUILIBRIUM.toString()} defaultValue={stateParameters.numberOfIterations} onChange={(e) => updateNumberOfIterations(e.target.value)} />
                 </div>
                 <div>
                     <Label htmlFor="timebound">Timebound (K)</Label>
-                    <Input id="timebound" type="number" placeholder="5" defaultValue={parameters.timebound} onChange={(e) => updateNumberOfTimeBound(e.target.value)} />
+                    <Input id="timebound" type="number" placeholder="5" defaultValue={stateParameters.timebound} onChange={(e) => updateNumberOfTimeBound(e.target.value)} />
                 </div>
             </div>
         </fieldset >
