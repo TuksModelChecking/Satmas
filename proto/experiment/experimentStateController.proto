@@ -48,6 +48,7 @@ message ActionListAtTimestep {
 message ExperimentResult {
   repeated ResourceStateAtTimestemp resourceStates = 1;
   repeated ActionListAtTimestep actionList = 2;
+  string result = 3;
 }
 
 message MarkExperimentSuccessfulRequest {
