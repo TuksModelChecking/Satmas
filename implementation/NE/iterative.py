@@ -233,8 +233,6 @@ def solve_for_agent_epsilon_ne(problem, prev_strategy_profile, prev_goal_map):
 
         if curr_goal_map[agt.id] > prev_goal_map[agt.id]:
             temp_goal_map[agt.id] = curr_goal_map[agt.id]
-            # curr_goal_map = h_count_relall(curr_strategy_profile, agt.id, curr_goal_map)
-            # print(f"Found Better: {curr_goal_map}")
             found_better = True
         else:
             temp_goal_map[agt.id] = prev_goal_map[agt.id]
