@@ -56,7 +56,6 @@ def encode_protocol(agents: List[Agent], num_agents: int, num_resources: int, k:
         } for t in range(0, k + 1)
     }
 
-    print("Precomputing strategic decision terms for protocol_temp...")
     for t in range(0, k + 1):
         for agt_a in agents:
             agent_obs_list = state_observations_cache[agt_a.id]
@@ -89,8 +88,6 @@ def encode_protocol(agents: List[Agent], num_agents: int, num_resources: int, k:
                         encode_strategic_decision("idle", state_observation, agt_a, num_resources, t)
                     )
                 )
-        # print(f"Done with precomputation for time: {t}")
-    print("Done with precomputing strategic decision terms.")
 
     for t in range(0, k + 1):
         for agt_a in agents:
