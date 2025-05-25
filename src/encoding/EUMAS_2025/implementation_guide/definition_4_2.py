@@ -1,7 +1,7 @@
 from mra.problem import MRA
-from pysat.formula import And, Formula
-from core.pysat_constructs import Atom, Equiv
-from encoding.SBMF_2021.definition_19 import encode_goal # For [a.goal]_{t'}
+from pysat.formula import And, Formula, Equals
+from core.pysat_constructs import Atom
+from encoding.SBMF_2021.definition_19 import encode_goal
 
 # \begin{subdefinition} \textbf{(Auxiliary Encoding for Goals)}
 # $[Aux_{goal}]$ introduces new Boolean variables $_{a}goal^t_{t'} $ indicating goal-achievement of agent $a$ at time step $t'$, assuming a loop of size $t$.
@@ -39,7 +39,7 @@ def encode_aux_goal(mra: MRA, k: int) -> Formula:
     return And(*(
         And(*(
             And(*(
-                Equiv(
+                Equals(
                     Atom(f"agent{agent.id}_goal_loop{t}_at_t_prime{t_prime}"),
                     And(
                         encode_goal(agent, t_prime, mra.num_agents_plus()),

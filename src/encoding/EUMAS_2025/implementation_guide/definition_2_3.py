@@ -1,6 +1,6 @@
 from mra.problem import MRA
-from pysat.formula import And, Or, Neg, Formula
-from core.pysat_constructs import Atom, Equiv
+from pysat.formula import And, Or, Neg, Formula, Equals
+from core.pysat_constructs import Atom
 from .definition_2_2 import encode_state_equality_at_t_and_0
 
 # \begin{subdefinition} \textbf{(Encoding of Loop Closed)}
@@ -24,12 +24,11 @@ def encode_aux_loop_closed(mra: MRA, k: int) -> Formula:
     Formula: not loopClosed_0 AND 
              And_{t=1 to k} (loopClosed_t <-> (loopClosed_{t-1} OR [s_t = s_0]))
     """
-    neg_loop_closed_0 = Neg(Atom(f"loopClosed_0"))
 
     return And(
-        neg_loop_closed_0,
+        Neg(Atom(f"loopClosed_0")),
         And(*(
-            Equiv(
+            Equals(
                 Atom(f"loopClosed_{t_val}"),
                 Or(
                     Atom(f"loopClosed_{t_val - 1}"),

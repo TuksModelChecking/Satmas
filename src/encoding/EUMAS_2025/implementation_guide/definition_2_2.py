@@ -1,7 +1,6 @@
 from mra.problem import MRA
 from encoding.SBMF_2021.definition_17 import encode_resource_state_at_t
-from pysat.formula import And, Or, Implies, Formula, PYSAT_TRUE, PYSAT_FALSE
-from core.pysat_constructs import Equiv # Import the new helper
+from pysat.formula import And, Or, Formula, Equals
 
 # \begin{subdefinition} \textbf{(Encoding of Repeated States)}
 # \[
@@ -32,8 +31,7 @@ def encode_state_equality_at_t_and_0(mra: MRA, t: int) -> Formula:
     """
     return And(*(
         And(*(
-            # Equivalence: ([r = a]_t <-> [r = a]_0)
-            Equiv(
+            Equals(
                 encode_resource_state_at_t(resource, agent.id, t, mra.num_agents_plus()),
                 encode_resource_state_at_t(resource, agent.id, 0, mra.num_agents_plus())
             )

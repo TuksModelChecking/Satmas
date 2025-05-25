@@ -1,5 +1,5 @@
-from pysat.formula import And, Neg, Formula
-from core.pysat_constructs import Atom, Equiv
+from pysat.formula import And, Neg, Formula, Equals
+from core.pysat_constructs import Atom
 
 # \begin{subdefinition} \textbf{(Encoding of Loop Size)}
 # $[Aux_{loopSize}]$  introduces new Boolean variables $loopSize_t$ with $t \leq t \leq k$ such that $loopSize_t$ solely evaluates to \emph{true} for truth assignments that characterise loops of size $t$.
@@ -22,7 +22,7 @@ def encode_aux_loop_size(k: int) -> Formula:
         Formula: The PySAT formula representing [Aux_loopSize].
     """
     return And(*(
-        Equiv(
+        Equals(
             Atom(f"loopSize_{t}"),
             And(
                 Neg(Atom(f"loopClosed_{t - 1}")),

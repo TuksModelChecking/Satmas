@@ -44,18 +44,16 @@ def encode_overall_formula_f_agt_infinity(mra: MRA, k: int) -> WCNF:
         num_resources=mra.num_resources(),
         k=k
     )
-    if coop_agt_formula and coop_agt_formula.clauses:
-        for clause in coop_agt_formula.clauses:
-            wcnf.append(clause)
+    
+    coop_agt_formula.clausify()
+    wcnf.extend(coop_agt_formula.clauses)
 
     m_loop_formula = encode_m_loop(mra, k)
-    if m_loop_formula and m_loop_formula.clauses:
-        for clause in m_loop_formula.clauses:
-            wcnf.append(clause)
+    m_loop_formula.clausify()
+    wcnf.extend(m_loop_formula.clauses)
 
     phi_infinity_formula = encode_infinite_goal_reachability(mra, k)
-    if phi_infinity_formula and phi_infinity_formula.clauses:
-        for clause in phi_infinity_formula.clauses:
-            wcnf.append(clause)
+    phi_infinity_formula.clausify()
+    wcnf.extend(phi_infinity_formula.clauses)
             
     return wcnf

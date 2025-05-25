@@ -39,20 +39,13 @@ def encode_optimal_goal_reachability(mra: MRA, k: int) -> WCNF:
     """
     wcnf = WCNF()
 
-    # 1. Add hard clauses from [Aux_loopSize]
-    # encode_aux_loop_size(k) from definition_4_1.py
-    # Assumes encode_aux_loop_size has the signature: def encode_aux_loop_size(k: int) -> Formula:
-    aux_loop_size_formula = encode_aux_loop_size(k) 
-    if aux_loop_size_formula.clauses: # PYSAT_TRUE has empty clauses, PYSAT_FALSE has [[]]
-        for clause in aux_loop_size_formula.clauses:
-            wcnf.append(clause) # Add as hard clause (weight=None by default)
+    aux_loop_size_formula = encode_aux_loop_size(k)
+    aux_loop_size_formula.clausify()
+    wcnf.extend(aux_loop_size_formula.clauses)
 
-    # 2. Add hard clauses from [Aux_goal]
-    # encode_aux_goal(mra, k) from definition_4_2.py
     aux_goal_formula = encode_aux_goal(mra, k)
-    if aux_goal_formula.clauses: # PYSAT_TRUE has empty clauses, PYSAT_FALSE has [[]]
-        for clause in aux_goal_formula.clauses:
-            wcnf.append(clause) # Add as hard clause
+    aux_goal_formula.clausify()
+    wcnf.extend(aux_goal_formula.clauses)
 
     # 3. Add soft clauses: 
     # Corresponds to: And_{a in Agt} And_{t=1 to k} And_{t'=0 to t-1} (_{a}goal^t_{t'}, floor(k^2/t))

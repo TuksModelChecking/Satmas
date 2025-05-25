@@ -10,10 +10,3 @@ def Atom(name: str):
     Uses the global vpool for consistent ID management.
     """
     return PySATAtom(vpool.id(name))
-
-def Equiv(l1, l2):
-    """
-    Represents logical equivalence (l1 <-> l2) as (l1 -> l2) AND (l2 -> l1).
-    l1 and l2 are expected to be PySAT formula constructs (literals or clauses).
-    """
-    return And(Implies(l1, l2), Implies(l2, l1))
