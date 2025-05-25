@@ -1,6 +1,6 @@
 import math
 from mra.problem import MRA
-from pysat.formula import WCNF, Formula
+from pysat.formula import WCNF
 from core.pysat_constructs import Atom
 from .definition_4_1 import encode_aux_loop_size
 from .definition_4_2 import encode_aux_goal
@@ -41,7 +41,7 @@ def encode_optimal_goal_reachability(mra: MRA, k: int) -> WCNF:
 
     aux_loop_size_formula = encode_aux_loop_size(k)
     aux_loop_size_formula.clausify()
-    wcnf.extend(aux_loop_size_formula.clauses)
+    wcnf.extend(aux_loop_size_formula.clauses) 
 
     aux_goal_formula = encode_aux_goal(mra, k)
     aux_goal_formula.clausify()
@@ -54,27 +54,11 @@ def encode_optimal_goal_reachability(mra: MRA, k: int) -> WCNF:
 
     # Iterate over agents 'a' (corresponds to And_{a in Agt})
     for agent in mra.agt:
-        # Iterate over loop sizes 't' (corresponds to And_{t=1 to k})
         for t_loop_size in range(1, k + 1): 
-            # Calculate weight: floor(k^2 / t)
-            # Ensure t_loop_size is not zero, which is guaranteed by range(1, k+1)
             weight = math.floor((k * k) / t_loop_size)
 
-            # If weight is 0, this soft clause has no impact on the solution's value.
-            # It could still be added if desired for structural completeness, but often omitted.
-            if weight == 0:
-                continue
-
-            # Iterate over time steps within the loop 't'' (corresponds to And_{t'=0 to t-1})
-            for t_prime in range(t_loop_size): # t' from 0 to t-1 (where t is t_loop_size)
-                # Define the Boolean variable _{a}goal^t_{t'}
-                # This name must match the variable name used in encode_aux_goal
+            for t_prime in range(t_loop_size):
                 goal_var_atom = Atom(f"agent{agent.id}_goal_loop{t_loop_size}_at_t_prime{t_prime}")
-                
-                # Add the soft clause: ([_{a}goal^t_{t'}], weight)
-                # This means we want the literal goal_var_atom.v to be true.
-                # If goal_var_atom.v is false, the clause [goal_var_atom.v] is unsatisfied,
-                # and a penalty 'weight' is incurred by the MaxSAT solver.
-                wcnf.append(Formula.literals([goal_var_atom]), weight=weight)
+                wcnf.append(clause=[goal_var_atom.name], weight=weight)
                 
     return wcnf
