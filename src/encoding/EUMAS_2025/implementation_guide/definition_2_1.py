@@ -55,7 +55,7 @@ def encode_unique(mra: MRA) -> Formula:
     return And(*(
         Or(*(
             encode_resource_state_at_t(resource, agent_id, 0, mra.num_agents_plus())
-            for agent_id in range(0, mra.num_agents)
+            for agent_id in range(0, mra.num_agents_plus())
         ))
         for resource in mra.res
     ))

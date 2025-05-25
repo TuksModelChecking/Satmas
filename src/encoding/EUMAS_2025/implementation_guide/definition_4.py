@@ -47,12 +47,6 @@ def encode_optimal_goal_reachability(mra: MRA, k: int) -> WCNF:
     aux_goal_formula.clausify()
     wcnf.extend(aux_goal_formula.clauses)
 
-    # 3. Add soft clauses: 
-    # Corresponds to: And_{a in Agt} And_{t=1 to k} And_{t'=0 to t-1} (_{a}goal^t_{t'}, floor(k^2/t))
-    # Each (literal, weight) pair becomes a soft clause.
-    # The variable _{a}goal^t_{t'} is Atom(f"agent{agent.id}_goal_loop{t_loop_size}_at_t_prime{t_prime}")
-
-    # Iterate over agents 'a' (corresponds to And_{a in Agt})
     for agent in mra.agt:
         for t_loop_size in range(1, k + 1): 
             weight = math.floor((k * k) / t_loop_size)
