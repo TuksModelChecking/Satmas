@@ -38,22 +38,22 @@ def encode_overall_formula_f_agt_infinity(mra: MRA, k: int) -> WCNF:
 
     wcnf = encode_optimal_goal_reachability(mra, k)
 
-    coop_agt_formula = encode_protocol(
+    protocol = encode_protocol(
         agents=mra.agt,
         num_agents=mra.num_agents_plus(),
         num_resources=mra.num_resources(),
         k=k
     )
     
-    coop_agt_formula.clausify()
-    wcnf.extend(coop_agt_formula.clauses)
+    for clause in protocol:
+        wcnf.append(clause=clause, weight=0)
 
     m_loop_formula = encode_m_loop(mra, k)
-    m_loop_formula.clausify()
-    wcnf.extend(m_loop_formula.clauses)
+    for clause in m_loop_formula:
+        wcnf.append(clause=clause, weight=0)
 
     phi_infinity_formula = encode_infinite_goal_reachability(mra, k)
-    phi_infinity_formula.clausify()
-    wcnf.extend(phi_infinity_formula.clauses)
+    for clause in phi_infinity_formula:
+        wcnf.append(clause=clause, weight=0)
             
     return wcnf

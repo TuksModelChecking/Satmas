@@ -7,7 +7,6 @@ sys.path.insert(0, project_root)
 sys.path.insert(0, os.path.join(project_root, 'src'))
 
 from pysat.examples.rc2 import RC2
-from pysat.solvers import Glucose4
 from utils.yaml_parser import parse_mra_from_yaml
 from core.pysat_constructs import vpool
 from core.model_interpreter import ModelInterpreter
@@ -32,7 +31,6 @@ def run_example():
         print("Solving with PySAT (RC2)...")
         with RC2(formula) as rc2:
             solution_model = rc2.compute()
-            print('model {0} has cost {1}'.format(solution_model, rc2.cost))
     except Exception as e:
         print(f"Error during PySAT solving: {e}")
         import traceback
@@ -41,6 +39,7 @@ def run_example():
 
     if solution_model is not None:
         print("\n--- Solution Found! ---")
+        print('model {0} has cost {1}'.format(solution_model, rc2.cost))
         
         interpreter = ModelInterpreter(
             solution_model,

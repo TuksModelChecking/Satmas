@@ -40,12 +40,12 @@ def encode_optimal_goal_reachability(mra: MRA, k: int) -> WCNF:
     wcnf = WCNF()
 
     aux_loop_size_formula = encode_aux_loop_size(k)
-    aux_loop_size_formula.clausify()
-    wcnf.extend(aux_loop_size_formula.clauses) 
+    for clause in aux_loop_size_formula:
+        wcnf.append(clause)
 
     aux_goal_formula = encode_aux_goal(mra, k)
-    aux_goal_formula.clausify()
-    wcnf.extend(aux_goal_formula.clauses)
+    for clause in aux_goal_formula:
+        wcnf.append(clause)
 
     for agent in mra.agt:
         for t_loop_size in range(1, k + 1): 
@@ -53,6 +53,7 @@ def encode_optimal_goal_reachability(mra: MRA, k: int) -> WCNF:
 
             for t_prime in range(t_loop_size):
                 goal_var_atom = Atom(f"agent{agent.id}_goal_loop{t_loop_size}_at_t_prime{t_prime}")
-                wcnf.append(clause=[goal_var_atom.name], weight=weight)
+                for clause in goal_var_atom.clauses:
+                    wcnf.append(clause=clause, weight=weight)
                 
     return wcnf
