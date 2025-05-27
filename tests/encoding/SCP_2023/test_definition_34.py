@@ -2,7 +2,7 @@ import pytest
 from pysat.formula import And, Equals, Neg, Formula as PySATFormula
 from mra.problem import MRA
 from mra.agent import Agent
-from encoding.SCP_2023.definition_34 import encode_frequency_optimization
+from encoding.SCP_2023.definition_33 import encode_frequency_optimization
 from core.pysat_constructs import Atom
 
 from encoding.SBMF_2021.definition_19 import encode_goal

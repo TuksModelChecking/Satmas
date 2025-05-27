@@ -4,7 +4,7 @@ from core.pysat_constructs import Atom
 from ..SBMF_2021.definition_14 import encode_goal
 
 ###################################################
-# By Definition 34 in Paper 2
+# By Definition 33 in Paper 2
 ###################################################
 
 # \begin{df}[Frequency Optimisation Encoding] \ \\

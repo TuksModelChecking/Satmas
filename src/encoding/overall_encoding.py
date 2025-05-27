@@ -2,7 +2,7 @@ from mra.problem import MRA
 from .SBMF_2021.definition_15 import encode_protocol
 from .SBMF_2021.definition_13 import encode_m_k
 from .SBMF_2021.definition_14 import encode_goal_reachability_formula
-from .SCP_2023.definition_34 import encode_frequency_optimization
+from .SCP_2023.definition_33 import encode_frequency_optimization
 from pysat.formula import And, Formula
 
 def encode_mra(mra: MRA, k: int) -> Formula:
