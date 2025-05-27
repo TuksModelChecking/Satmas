@@ -22,23 +22,18 @@ from ..SBMF_2021.definition_14 import encode_goal
 # where $g^a_t$ with $a \in Agt$ and $0 \leq t \leq k$ are the Boolean variables introduced in the frequency  auxiliary encoding.  
 # \end{df}
 def encode_frequency_optimization(mra_problem: MRA, k: int, to_fix_agt_id: int = -1):
-    to_and = []
-    for t in range(0, k + 1):
-        for agent_obj in mra_problem.agt:
-            if to_fix_agt_id == -1 or to_fix_agt_id == agent_obj.id:
-                goal_var_name = f"t{t}_g_a{agent_obj.id}"
-                goal_atom = Atom(goal_var_name) # This Atom will be used for soft clauses
-                
-                encoded_goal_condition = encode_goal(agent_obj, t, mra_problem.num_agents_plus())
-                
-                if encoded_goal_condition is not None: # If goal is possible
-                    to_and.append(
-                        Equals(goal_atom, encoded_goal_condition)
-                    )
-                else: # Goal is impossible (e.g. d > |acc|) or trivially true (d=0)
-                    if agent_obj.d > len(agent_obj.acc) and agent_obj.d > 0 : # Impossible
-                        to_and.append(Neg(goal_atom)) # Goal variable must be false
-                    elif agent_obj.d == 0 : # Trivially true
-                        to_and.append(goal_atom) # Goal variable must be true
-    return And(*[item for item in to_and if item is not None])
+    agents_to_process = mra_problem.agt
+    if to_fix_agt_id != -1:
+        agents_to_process = [agt for agt in mra_problem.agt if agt.id == to_fix_agt_id]
+
+    return And(*(
+        And(*(
+            Equals(
+                Atom(f"t{t_step}_g_a{agent_obj.id}"),
+                encode_goal(agent_obj, t_step, mra_problem.num_agents_plus())
+            )
+            for t_step in range(k + 1) # t_step from 0 to k
+        ))
+        for agent_obj in agents_to_process
+    ))
 
