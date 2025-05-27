@@ -21,7 +21,7 @@ from ..SBMF_2021.definition_14 import encode_goal
 # \]
 # where $g^a_t$ with $a \in Agt$ and $0 \leq t \leq k$ are the Boolean variables introduced in the frequency  auxiliary encoding.  
 # \end{df}
-def encode_frequency_optimization(mra_problem: MRA, k: int, to_fix_agt_id: int = -1):
+def encode_frequency_optimisation(mra_problem: MRA, k: int, to_fix_agt_id: int = -1):
     agents_to_process = mra_problem.agt
     if to_fix_agt_id != -1:
         agents_to_process = [agt for agt in mra_problem.agt if agt.id == to_fix_agt_id]

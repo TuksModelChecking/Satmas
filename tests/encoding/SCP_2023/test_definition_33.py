@@ -2,7 +2,7 @@ import pytest
 from pysat.formula import And, Equals, Neg, Formula as PySATFormula
 from mra.problem import MRA
 from mra.agent import Agent
-from encoding.SCP_2023.definition_33 import encode_frequency_optimization
+from encoding.SCP_2023.definition_33 import encode_frequency_optimisation
 from core.pysat_constructs import Atom
 
 from encoding.SBMF_2021.definition_19 import encode_goal
@@ -36,7 +36,7 @@ def test_single_agent_achievable_goal_k0():
     expected_encoded_goal_condition = encode_goal(agent1, 0, mra_problem.num_agents_plus())
     expected_formula = And([Equals(expected_goal_atom, expected_encoded_goal_condition)])
 
-    actual_formula = encode_frequency_optimization(mra_problem, k)
+    actual_formula = encode_frequency_optimisation(mra_problem, k)
     assert actual_formula.clauses == expected_formula.clauses
 
 def test_single_agent_impossible_goal_k0():
@@ -49,7 +49,7 @@ def test_single_agent_impossible_goal_k0():
     # Equals(Atom("t0_g_a1"), PYSAT_FALSE) simplifies to Neg(Atom("t0_g_a1")).
     expected_formula = And([Neg(Atom("t0_g_a1"))])
     
-    actual_formula = encode_frequency_optimization(mra_problem, k)
+    actual_formula = encode_frequency_optimisation(mra_problem, k)
     assert actual_formula.clauses == expected_formula.clauses
 
 def test_single_agent_trivial_goal_k0():
@@ -62,7 +62,7 @@ def test_single_agent_trivial_goal_k0():
     # Equals(Atom("t0_g_a1"), PYSAT_TRUE) simplifies to Atom("t0_g_a1").
     expected_formula = And([Atom("t0_g_a1")])
 
-    actual_formula = encode_frequency_optimization(mra_problem, k)
+    actual_formula = encode_frequency_optimisation(mra_problem, k)
     assert actual_formula.clauses == expected_formula.clauses
 
 def test_two_agents_k0_fixed_agent():
@@ -76,7 +76,7 @@ def test_two_agents_k0_fixed_agent():
     expected_encoded_goal_a1 = encode_goal(agent1, 0, mra_problem.num_agents_plus())
     expected_formula = And([Equals(expected_goal_atom_a1, expected_encoded_goal_a1)])
     
-    actual_formula = encode_frequency_optimization(mra_problem, k, to_fix_agt_id=1)
+    actual_formula = encode_frequency_optimisation(mra_problem, k, to_fix_agt_id=1)
     assert actual_formula.clauses == expected_formula.clauses
 
 def test_two_agents_k1_all_agents():
@@ -107,7 +107,7 @@ def test_two_agents_k1_all_agents():
     
     expected_formula = And(*clauses)
     
-    actual_formula = encode_frequency_optimization(mra_problem, k)
+    actual_formula = encode_frequency_optimisation(mra_problem, k)
     # Order of clauses in And might differ, so compare sets of frozensets of literals
     actual_clauses_set = {frozenset(c) for c in actual_formula.clauses}
     expected_clauses_set = {frozenset(c) for c in expected_formula.clauses}
@@ -120,7 +120,7 @@ def test_no_agents_k0():
     k = 0
     expected_formula = And([])
     
-    actual_formula = encode_frequency_optimization(mra_problem, k)
+    actual_formula = encode_frequency_optimisation(mra_problem, k)
     assert actual_formula.clauses == expected_formula.clauses
     assert actual_formula == expected_formula
 
@@ -137,7 +137,7 @@ def test_agent_goal_impossible_but_demand_positive():
 
     expected_formula = And([Neg(Atom("t0_g_a1"))])
     
-    actual_formula = encode_frequency_optimization(mra_problem, k)
+    actual_formula = encode_frequency_optimisation(mra_problem, k)
     assert actual_formula.clauses == expected_formula.clauses
 
 def test_agent_goal_impossible_demand_zero_len_acc_negative_mismatch():
@@ -155,5 +155,5 @@ def test_agent_goal_impossible_demand_zero_len_acc_negative_mismatch():
     # Equals(Atom("t0_g_a1"), PYSAT_TRUE) simplifies to Atom("t0_g_a1")
     expected_formula = And([Atom("t0_g_a1")])
     
-    actual_formula = encode_frequency_optimization(mra_problem, k)
+    actual_formula = encode_frequency_optimisation(mra_problem, k)
     assert actual_formula.clauses == expected_formula.clauses

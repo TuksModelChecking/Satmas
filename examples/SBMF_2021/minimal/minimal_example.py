@@ -14,6 +14,7 @@ from core.model_interpreter import ModelInterpreter
 from encoding.SBMF_2021.definition_15 import encode_protocol
 from encoding.SBMF_2021.definition_13 import encode_m_k
 from encoding.SBMF_2021.definition_14 import encode_goal_reachability_formula
+from encoding.SCP_2023.definition_33 import encode_frequency_optimisation
 
 def run_example():
     yaml_file_path = os.path.join(script_dir, "minimal_example.yml")
@@ -33,6 +34,7 @@ def run_example():
             encode_goal_reachability_formula(mra_problem.agt, mra_problem.num_agents_plus(), k),
             encode_m_k(mra_problem, k),
             encode_protocol(mra_problem.agt, mra_problem.num_agents_plus(), mra_problem.num_resources(), k),
+            encode_frequency_optimisation(mra_problem, k)
         )
 
         print("Solving with PySAT (Glucose4)...")
