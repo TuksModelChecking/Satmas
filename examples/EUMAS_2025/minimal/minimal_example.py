@@ -19,18 +19,18 @@ def run_example():
     print(f"Loading MRA problem from: {yaml_file_path}\n")
 
     try:
-        mra_problem, k = parse_mra_from_yaml(yaml_file_path)
+        mra, k = parse_mra_from_yaml(yaml_file_path)
     except Exception as e:
         print(f"Error parsing YAML into MRA problem: {e}")
         return
 
     try:
         print(f"Encoding MRA problem for k={k}...")
-        formula = encode_overall_formula_f_agt_infinity(mra_problem, k)
+        wcnf = encode_overall_formula_f_agt_infinity(mra, k)
 
         print("Solving with PySAT (RC2)...")
-        with RC2(formula) as rc2:
-            solution_model = rc2.compute()
+        with RC2(wcnf) as solver:
+            solution_model = solver.compute()
     except Exception as e:
         print(f"Error during PySAT solving: {e}")
         import traceback
@@ -39,12 +39,11 @@ def run_example():
 
     if solution_model is not None:
         print("\n--- Solution Found! ---")
-        print('model {0} has cost {1}'.format(solution_model, rc2.cost))
         
         interpreter = ModelInterpreter(
             solution_model,
             vpool,
-            mra_problem
+            mra
         )
 
         print("\n--- Model Trace ---")

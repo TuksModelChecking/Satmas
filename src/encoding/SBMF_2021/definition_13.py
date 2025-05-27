@@ -8,10 +8,10 @@ from .definition_17 import encode_resource_state_at_t
 from .definition_19 import all_selections_of_k_elements_from_set
 
 def encode_m_k(mra: MRA, k: int):
-    to_conjunct = [encode_initial_state(mra, mra.num_agents_plus())]
-    for t in range(0, k):
-        to_conjunct.append((encode_evolution(mra, t)))
-    return And(*[item for item in to_conjunct if item is not None])
+    return And(
+        encode_initial_state(mra, mra.num_agents_plus()),
+        *(encode_evolution(mra, t) for t in range(k))
+    )
 
 ################################################
 # By Definition 13 in Paper
@@ -48,10 +48,10 @@ def encode_m_k(mra: MRA, k: int):
 # \end{definition}
 
 def encode_evolution(mra_problem: MRA, t: int):
-    to_conjunct = []
-    for r_val in mra_problem.res:
-        to_conjunct.append((encode_resource_evolution(r_val, mra_problem, t)))
-    return And(*[item for item in to_conjunct if item is not None])
+    return And(*(
+        encode_resource_evolution(r_val, mra_problem, t) 
+        for r_val in range(1, mra_problem.num_resources() + 1)
+    ))
 
 def encode_resource_evolution(r_val: int, mra_problem: MRA, t: int):
     num_resources = mra_problem.num_resources()

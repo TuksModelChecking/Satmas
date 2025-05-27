@@ -1,7 +1,5 @@
-import math
 from mra.problem import MRA
-from pysat.formula import WCNF
-from core.pysat_constructs import Atom
+from pysat.formula import And, Formula
 from .definition_4_1 import encode_aux_loop_size
 from .definition_4_2 import encode_aux_goal
 
@@ -20,7 +18,7 @@ from .definition_4_2 import encode_aux_goal
 # \end{itemize}
 # \end{definition}
 
-def encode_optimal_goal_reachability(mra: MRA, k: int) -> WCNF:
+def encode_optimal_goal_reachability(mra: MRA, k: int) -> Formula:
     """
     Encodes the optimal goal-reachability condition as a WCNF formula.
     This includes hard constraints for loop size and auxiliary goal variables,
@@ -36,24 +34,8 @@ def encode_optimal_goal_reachability(mra: MRA, k: int) -> WCNF:
 
     Returns:
         WCNF: A WCNF object representing the MaxSAT problem.
-    """
-    wcnf = WCNF()
-
-    aux_loop_size_formula = encode_aux_loop_size(k)
-    for clause in aux_loop_size_formula:
-        wcnf.append(clause)
-
-    aux_goal_formula = encode_aux_goal(mra, k)
-    for clause in aux_goal_formula:
-        wcnf.append(clause)
-
-    for agent in mra.agt:
-        for t_loop_size in range(1, k + 1): 
-            weight = math.floor((k * k) / t_loop_size)
-
-            for t_prime in range(t_loop_size):
-                goal_var_atom = Atom(f"agent{agent.id}_goal_loop{t_loop_size}_at_t_prime{t_prime}")
-                for clause in goal_var_atom.clauses:
-                    wcnf.append(clause=clause, weight=weight)
-                
-    return wcnf
+    """ 
+    return And(
+        encode_aux_loop_size(k),
+        encode_aux_goal(mra, k)
+    )
