@@ -207,7 +207,6 @@ class ModelInterpreter:
             obj = self.vpool.obj(abs(var_int))
             if obj is not None:
                  model[obj] = var_int > 0
-        print("Interpreter Named model:", model) # For debugging
         return model
 
     def _find_max_time_step(self) -> int:

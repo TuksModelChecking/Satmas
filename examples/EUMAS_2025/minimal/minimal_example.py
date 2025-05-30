@@ -31,6 +31,7 @@ def run_example():
         print("Solving with PySAT (RC2)...")
         with RC2(wcnf) as solver:
             solution_model = solver.compute()
+            print(f"Oracle time: {solver.oracle_time()}")
     except Exception as e:
         print(f"Error during PySAT solving: {e}")
         import traceback
