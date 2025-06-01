@@ -1,4 +1,4 @@
-k: 6
+k: 36
 
 resources:
   - r1
@@ -9,12 +9,12 @@ resources:
 agents:
   - id: a1
     demand: 2
-    access: [r1, r4]
+    access: [r1, r2]
 
   - id: a2
-    demand: 1
-    access: [r2]
+    demand: 2
+    access: [r2, r3]
 
   - id: a3
-    demand: 1
-    access: [r3]
+    demand: 2
+    access: [r3, r4]
