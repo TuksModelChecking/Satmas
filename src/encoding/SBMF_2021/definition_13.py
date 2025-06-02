@@ -8,10 +8,10 @@ from .definition_17 import encode_resource_state_at_t
 from .definition_19 import all_selections_of_k_elements_from_set
 
 def encode_m_k(mra: MRA, k: int):
-    to_conjunct = [encode_initial_state(mra, mra.num_agents_plus())]
-    for t in range(0, k):
-        to_conjunct.append((encode_evolution(mra, t)))
-    return And(*[item for item in to_conjunct if item is not None])
+    return And(
+        encode_initial_state(mra, mra.num_agents_plus()),
+        *(encode_evolution(mra, t) for t in range(k))
+    )
 
 ################################################
 # By Definition 13 in Paper
@@ -48,60 +48,66 @@ def encode_m_k(mra: MRA, k: int):
 # \end{definition}
 
 def encode_evolution(mra_problem: MRA, t: int):
-    to_conjunct = []
-    for r_val in mra_problem.res:
-        to_conjunct.append((encode_r_evolution(r_val, mra_problem, t)))
-    return And(*[item for item in to_conjunct if item is not None])
+    return And(*(
+        encode_resource_evolution(r_val, mra_problem, t) 
+        for r_val in range(1, mra_problem.num_resources() + 1)
+    ))
 
-def encode_r_evolution(r_val: int, mra_problem: MRA, t: int):
+def encode_resource_evolution(r_val: int, mra_problem: MRA, t: int):
     num_resources = mra_problem.num_resources()
     num_agents_plus_val = mra_problem.num_agents_plus()
     
-    to_or = []
+    agent_evolution = []
     for agt_a in mra_problem.agt:
         if r_val in agt_a.acc:
-            to_or.append(
-                And(
+            successful_request = And(
                     encode_resource_state_at_t(r_val, agt_a.id, t + 1, num_agents_plus_val),
                     encode_action(f"req{r_val}", agt_a, num_resources, t),
                     h_encode_other_agents_not_requesting_r(mra_problem.agt, num_resources, agt_a, r_val, t)
                 )
-            )
-            to_or.append(
-                And(
+
+            keep_resource = And(
                     encode_resource_state_at_t(r_val, agt_a.id, t + 1, num_agents_plus_val),
                     encode_resource_state_at_t(r_val, agt_a.id, t, num_agents_plus_val),
                     Neg(encode_action(f"rel{r_val}", agt_a, num_resources, t)),
                     Neg(encode_action("relall", agt_a, num_resources, t))
                 )
-            )
-            to_or.append(
-                And(
+
+            release_resource = And(
                     encode_resource_state_at_t(r_val, 0, t + 1, num_agents_plus_val),
                     encode_action(f"rel{r_val}", agt_a, num_resources, t),
                 )
-            )
-            to_or.append(
-                And(
+
+            release_all_resources = And(
                     encode_resource_state_at_t(r_val, 0, t + 1, num_agents_plus_val),
                     encode_resource_state_at_t(r_val, agt_a.id, t, num_agents_plus_val),
                     encode_action("relall", agt_a, num_resources, t)
                 )
-            )
 
-    return Or(
-        Or(*[to_or_item for to_or_item in to_or if to_or_item is not None]),
-        And(
-            encode_resource_state_at_t(r_val, 0, t + 1, num_agents_plus_val), # Resource becomes unassigned
-            encode_resource_state_at_t(r_val, 0, t, num_agents_plus_val), # Resource was unassigned
-            h_encode_no_agents_requesting_r(mra_problem.agt, num_resources, r_val, t) # No one requested it
-        ),
-        And(
-            encode_resource_state_at_t(r_val, 0, t + 1, num_agents_plus_val), # Resource becomes unassigned
-            encode_resource_state_at_t(r_val, 0, t, num_agents_plus_val), # Resource was unassigned
-            encode_all_pairs_of_agents_requesting_r(mra_problem.agt, num_resources, r_val, t) # Conflict case
-        )
+            agent_evolution.append(successful_request)
+            agent_evolution.append(keep_resource)
+            agent_evolution.append(release_resource)
+            agent_evolution.append(release_all_resources)
+
+    unrequested_resource = And(
+        encode_resource_state_at_t(r_val, 0, t + 1, num_agents_plus_val), # Resource becomes unassigned
+        encode_resource_state_at_t(r_val, 0, t, num_agents_plus_val), # Resource was unassigned
+        h_encode_no_agents_requesting_r(mra_problem.agt, num_resources, r_val, t) # No one requested it
     )
+    
+    request_conflict = And(
+        encode_resource_state_at_t(r_val, 0, t + 1, num_agents_plus_val), # Resource becomes unassigned
+        encode_resource_state_at_t(r_val, 0, t, num_agents_plus_val), # Resource was unassigned
+        encode_all_pairs_of_agents_requesting_r(mra_problem.agt, num_resources, r_val, t) # Conflict case
+    )
+
+    resource_evolution = Or(
+        Or(*[agent_evolution_item for agent_evolution_item in agent_evolution if agent_evolution_item is not None]),
+        unrequested_resource,
+        request_conflict
+    )
+
+    return resource_evolution
 
 
 def h_encode_other_agents_not_requesting_r(agents: List[Agent], num_resources: int, current_agent: Agent, r_val: int, t: int):
@@ -122,8 +128,6 @@ def h_encode_no_agents_requesting_r(agents: List[Agent], num_resources: int, r_v
 
 def encode_all_pairs_of_agents_requesting_r(agents: List[Agent], num_resources: int, r_val: int, t: int):
     accessible_agents = [agt for agt in agents if r_val in agt.acc]
-    if len(accessible_agents) < 2:
-        return PYSAT_TRUE
     
     to_or = []
     
@@ -139,8 +143,7 @@ def encode_all_pairs_of_agents_requesting_r(agents: List[Agent], num_resources: 
                     encode_action(f"req{r_val}", agt2, num_resources, t)
                 )
             )
-    return Or(*[item for item in to_or if item is not None]) if to_or else PYSAT_FALSE # False if no pairs can request
-
+    return Or(*[item for item in to_or if item is not None])
 
 def h_find_agent(agents: List[Agent], a_id: int) -> Agent | None:
     for agt_a in agents:

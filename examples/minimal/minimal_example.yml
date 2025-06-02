@@ -1,9 +1,0 @@
-k: 2
-
-resources:
-  - r1
-  - r2
-agents:
-  - id: a1
-    demand: 2
-    access: [r1, r2]

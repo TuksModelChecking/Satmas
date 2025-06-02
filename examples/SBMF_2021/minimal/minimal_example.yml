@@ -1,0 +1,13 @@
+k: 2
+
+resources:
+  - r1
+  - r2
+  - r3
+agents:
+  - id: a1
+    demand: 2
+    access: [r1, r2]
+  - id: a2
+    demand: 1
+    access: [r3]

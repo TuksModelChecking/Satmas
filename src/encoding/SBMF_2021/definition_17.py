@@ -24,8 +24,7 @@ def encode_resource_state_at_t(resource: int, agent_id: int, t: int, total_num_a
     )
 
 def m(x) -> int:
-    if x <= 0: return 1 # Avoid math domain error for log(0) or log(negative)
-    return ceil(log(x, 2)) if x > 1 else 1 # log2(1)=0, need at least 1 bit.
+    return ceil(log(x, 2))
 
 def to_binary_string(number: int, x: int) -> str:
     return format(number, 'b').zfill(m(x))

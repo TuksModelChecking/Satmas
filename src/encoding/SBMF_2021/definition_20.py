@@ -23,11 +23,17 @@ def encode_action(action: str, agent: Agent, num_resources: int, t: int):
     # Assuming num_resources is a good upper bound for encoding bits.
     # (num_resources * 2) for req/rel pairs, +2 for idle and relall.
     num_possible_actions = (num_resources * 2) + 2 
-    return binary_encode(
+    encoded_action = binary_encode(
         to_binary_string(action_number(action), num_possible_actions),
         f"t{t}act_a{agent.id}"
     )
 
+    return encoded_action
+
+# rel1 would be 3
+# rel2 would be 5
+# req1 would be 2
+# req2 would be 4
 def action_number(action: str):
     if action == "idle":
         return 0

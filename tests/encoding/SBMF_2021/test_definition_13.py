@@ -1,13 +1,11 @@
-import pytest
-from pysat.formula import And, Or, Neg, PYSAT_TRUE, PYSAT_FALSE
+from pysat.formula import And, Or, Neg, PYSAT_TRUE
 
-from core.pysat_constructs import Atom
 from mra.problem import MRA
 from mra.agent import Agent
 from encoding.SBMF_2021.definition_13 import (
     encode_m_k,
     encode_evolution,
-    encode_r_evolution,
+    encode_resource_evolution,
     h_find_agent,
     h_encode_other_agents_not_requesting_r,
     h_encode_no_agents_requesting_r,
@@ -80,8 +78,8 @@ def test_encode_all_pairs_of_agents_requesting_r():
     t = 0
 
     # Case 1: < 2 agents can access
-    assert encode_all_pairs_of_agents_requesting_r([a1, a4], num_res_for_action, r_val, t) is PYSAT_TRUE
-    assert encode_all_pairs_of_agents_requesting_r([a4], num_res_for_action, r_val, t) is PYSAT_TRUE
+    assert encode_all_pairs_of_agents_requesting_r([a1, a4], num_res_for_action, r_val, t) is Or()
+    assert encode_all_pairs_of_agents_requesting_r([a4], num_res_for_action, r_val, t) is Or()
 
     # Case 2: Exactly 2 agents (a1, a2) can access
     term_a1_a2 = And(encode_action(f"req{r_val}", a1, num_res_for_action, t), encode_action(f"req{r_val}", a2, num_res_for_action, t))
@@ -146,16 +144,16 @@ def test_encode_r_evolution_simple_case():
         no_req_r0_by_a1
     )
     # Clause 6: r0 unassigned, stays unassigned, conflict (multiple requests)
-    # encode_all_pairs_of_agents_requesting_r is None (False) for single agent
-    # So the And simplifies as the None is filtered.
-    c6 = And( # This And will effectively only contain the first two terms due to None filtering
+    # encode_all_pairs_of_agents_requesting_r is an empty Or() (False) for single agent
+    c6 = And(
         encode_resource_state_at_t(r_val, 0, t + 1, num_agents_plus),
-        encode_resource_state_at_t(r_val, 0, t, num_agents_plus)
+        encode_resource_state_at_t(r_val, 0, t, num_agents_plus),
+        Or()
     )
 
 
     expected_formula = Or(or_for_agent_a1, c5, c6)
-    actual_formula = encode_r_evolution(r_val, mra, t)
+    actual_formula = encode_resource_evolution(r_val, mra, t)
     assert actual_formula.simplified() == expected_formula.simplified()
 
 def test_encode_evolution():
@@ -166,7 +164,7 @@ def test_encode_evolution():
     assert encode_evolution(mra_no_res, t) == And()
 
     mra_one_res = MRA(agt=[a1], res={0})
-    r0_evolution = encode_r_evolution(0, mra_one_res, t)
+    r0_evolution = encode_resource_evolution(0, mra_one_res, t)
     # PySAT's And might simplify And(X) to X.
     expected = And(r0_evolution)
     actual = encode_evolution(mra_one_res, t)
@@ -174,8 +172,8 @@ def test_encode_evolution():
     assert actual == expected
 
 def test_encode_m_k():
-    a1 = Agent(id=1, d=1, acc={0})
-    mra = MRA(agt=[a1], res={0})
+    a1 = Agent(id=1, d=1, acc={1})
+    mra = MRA(agt=[a1], res={1})
 
     # k = 0 (only initial state)
     k0 = 0
