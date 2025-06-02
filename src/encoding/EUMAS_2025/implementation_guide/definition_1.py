@@ -1,6 +1,6 @@
 from math import floor
 from mra.problem import MRA
-from pysat.formula import WCNF, And
+from pysat.formula import WCNF, And, Formula
 from core.pysat_constructs import Atom
 
 from encoding.SBMF_2021.definition_15 import encode_protocol
@@ -38,18 +38,24 @@ def encode_overall_formula_f_agt_infinity(mra: MRA, k: int) -> WCNF:
         WCNF: The WCNF object representing the overall MaxSAT problem.
     """
 
-    wcnf = WCNF()
+    hard_clauses = encode_formula_f_agt_infinity_hard_clauses(mra, k)
 
-    hard_clauses = And(
+    return enrich_formula_f_agt_infinity_with_soft_clauses(hard_clauses, mra, k)
+
+def encode_formula_f_agt_infinity_hard_clauses(mra: MRA, k: int) -> Formula:
+    return And(
         encode_optimal_goal_reachability(mra, k),
         encode_protocol(mra.agt, mra.num_agents_plus(), mra.num_resources(), k),
         encode_m_loop(mra, k),
         encode_infinite_goal_reachability(mra, k)
     )
 
-    for clause in hard_clauses:
-        wcnf.append(clause)
+def enrich_formula_f_agt_infinity_with_soft_clauses(formula: Formula, mra: MRA, k: int) -> WCNF:
+    wcnf = WCNF()
 
+    for clause in formula:
+        wcnf.append(clause)
+    
     for agent in mra.agt:
         for t in range(1, k + 1): 
             for t_prime in range(t):

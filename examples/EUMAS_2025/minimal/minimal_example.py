@@ -1,6 +1,5 @@
 import sys
 import os
-import subprocess
 import time
 from multiprocessing import Process, Manager
 
@@ -13,6 +12,7 @@ from pysat.examples.rc2 import RC2
 from utils.yaml_parser import parse_mra_from_yaml
 from core.pysat_constructs import vpool
 from core.model_interpreter import ModelInterpreter
+from core.open_wbo_solver import OpenWBOSolver
 from encoding.EUMAS_2025.implementation_guide.definition_1 import encode_overall_formula_f_agt_infinity
 
 def solve_with_pysat_rc2(wcnf_formula, results_dict):
@@ -39,56 +39,9 @@ def solve_with_pysat_rc2(wcnf_formula, results_dict):
         results_dict[solver_name] = {'status': 'error', 'message': str(e)}
 
 def solve_with_open_wbo(wcnf_file_path, open_wbo_binary_path, results_dict):
-    solver_name = "open-wbo"
-    print(f"[{solver_name}] Starting solver ({open_wbo_binary_path})...")
-    try:
-        start_time = time.time()
-        process = subprocess.run(
-            [open_wbo_binary_path, wcnf_file_path],
-            capture_output=True,
-            text=True,
-            check=False 
-        )
-        end_time = time.time()
-        
-        solution_model_str = None
-        solution_model = None
-        cost_str = None
-        status = 'unknown'
-
-        # Parse model and cost from stdout
-        for line in process.stdout.splitlines():
-            if line.startswith("v "):
-                solution_model_str = line[2:]
-                # convert to list of integers
-                solution_model = [int(x) for x in solution_model_str.split() if x.isdigit()]
-            if line.startswith("o "):
-                cost_str = line[2:]
-
-        # Determine status based on stdout content first, then return code
-        if "s OPTIMUM FOUND" in process.stdout or "s SATISFIABLE" in process.stdout:
-            status = 'success'
-        elif "s UNSATISFIABLE" in process.stdout:
-            status = 'no solution (UNSAT)'
-            
-        results_dict[solver_name] = {
-            'stdout': process.stdout,
-            'stderr': process.stderr,
-            'return_code': process.returncode,
-            'total_time': end_time - start_time,
-            'status': status,
-            'model': solution_model, 
-            'cost': cost_str 
-        }
-        print(f"[{solver_name}] Finished with status: {status}.")
-    except FileNotFoundError:
-        message = f"Error: {solver_name} binary not found at {open_wbo_binary_path}"
-        print(f"[{solver_name}] {message}")
-        results_dict[solver_name] = {'status': 'error', 'message': message}
-    except Exception as e:
-        message = f"Error during {solver_name} solving: {e}"
-        print(f"[{solver_name}] {message}")
-        results_dict[solver_name] = {'status': 'error', 'message': str(e)}
+    solver = OpenWBOSolver(open_wbo_binary_path)
+    result = solver.solve(wcnf_file_path)
+    results_dict[solver.solver_name] = result
 
 def run_example():
     yaml_file_path = os.path.join(script_dir, "minimal_example.yml")
