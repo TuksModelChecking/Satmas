@@ -1,5 +1,6 @@
 import os
 from math import floor
+import time
 from mra.problem import MRA
 from pysat.formula import WCNF, And, Formula
 from core.pysat_constructs import Atom
@@ -9,11 +10,12 @@ from core.pysat_constructs import vpool
 
 def iterative_optimal_loop_synthesis(mra: MRA, maxbound: int):
     best_k_loop = None
-    best_payoff = float('inf') # Initialize with positive infinity for minimization
+    best_payoff = float('inf') 
     best_k_value = -1
+    total_algorithm_start_time = time.time()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.abspath(os.path.join(script_dir, '..', '..', '..', '..')) # Navigate up to Satmas
+    project_root = os.path.abspath(os.path.join(script_dir, '..', '..', '..', '..')) 
     open_wbo_binary_path = os.path.join(project_root, "libs", "open-wbo", "open-wbo")
 
     solver = OpenWBOSolver(open_wbo_binary_path)
@@ -21,8 +23,12 @@ def iterative_optimal_loop_synthesis(mra: MRA, maxbound: int):
     os.makedirs(temp_wcnf_dir, exist_ok=True)
 
     for k_loop_size in range(1, maxbound + 1):
+        iteration_start_time = time.time()
         Formula.cleanup()
+        
         print(f"\n--- Iteration for k = {k_loop_size} ---")
+        
+        encoding_start_time = time.time()
         wcnf = enrich_formula_f_agt_infinity_with_maxbound_soft_clauses(
             And(
                 encode_formula_f_agt_infinity_hard_clauses(mra, k_loop_size),
@@ -32,12 +38,19 @@ def iterative_optimal_loop_synthesis(mra: MRA, maxbound: int):
             k_loop_size,
             maxbound
         )
+        encoding_time = time.time() - encoding_start_time
+        print(f"  Encoding time: {encoding_time:.4f}s")
        
         wcnf_file_path = os.path.join(temp_wcnf_dir, f"problem_k{k_loop_size}.wcnf")
         wcnf.to_file(wcnf_file_path)
-        print(f"WCNF problem for k={k_loop_size} saved to: {wcnf_file_path}")
+        print(f"  WCNF problem for k={k_loop_size} saved to: {wcnf_file_path}")
 
+        solving_start_time = time.time()
         result = solver.solve(wcnf_file_path)
+        solving_time = time.time() - solving_start_time
+        print(f"  Solving time (wall clock): {solving_time:.4f}s")
+        if 'total_time' in result:
+             print(f"  Solver execution time (reported by solver class): {result['total_time']:.4f}s")
 
         if result.get('status') == 'success' and result.get('model') is not None:
             current_cost = result.get('cost')
@@ -57,7 +70,13 @@ def iterative_optimal_loop_synthesis(mra: MRA, maxbound: int):
             os.remove(wcnf_file_path)
         except OSError as e:
             print(f"Warning: Could not remove temporary file {wcnf_file_path}: {e}")
+        
+        iteration_time = time.time() - iteration_start_time
+        print(f"  Total time for iteration k={k_loop_size}: {iteration_time:.4f}s")
 
+
+    total_algorithm_time = time.time() - total_algorithm_start_time
+    print(f"\n--- Total Algorithm Execution Time: {total_algorithm_time:.4f}s ---")
 
     print("\n--- Final Result ---")
     if best_k_loop is not None:
