@@ -1,9 +1,7 @@
 import re
 from collections import defaultdict
 from math import ceil, log
-# Assuming MRAProblem and Agent classes are accessible for type hinting
 from mra.problem import MRA
-from mra.agent import Agent
 
 
 class TimeStep:
@@ -30,6 +28,7 @@ class TimeStep:
         self.resource_states: dict[int, int] = {} # 0-idx r_id -> 0-idx agent_id (a0, a1, ...)
         self.demand_fulfillment: dict[int, tuple[int, int]] = {} # 1-idx agent_id (a1,...) -> (held, total)
         self.agent_actions: dict[int, str] = {} # 1-idx agent_id (a1,...) -> action_string
+        self.satisfied_agents: set[int] = set()  # Set of 1-idx agent IDs that have satisfied their demand
 
         self._parse_resource_states()
         self._calculate_demand_fulfillment()
@@ -76,6 +75,10 @@ class TimeStep:
             # as a_1 has 0-indexed ID 1, a_2 has ID 2, etc.
             held_count = agent_0_indexed_held_counts.get(agent_id_1_indexed, 0)
             self.demand_fulfillment[agent_id_1_indexed] = (held_count, total_demand)
+            
+            # Check if agent has satisfied its demand
+            if total_demand > 0 and held_count >= total_demand:
+                self.satisfied_agents.add(agent_id_1_indexed)
             
     def _action_number_to_string(self, number: int) -> str:
         if number == 0: return "idle"
@@ -198,6 +201,9 @@ class ModelInterpreter:
         self.mra_problem = mra_problem
         self.named_model: dict[str, bool] = self._to_named_model()
         self.max_time_step = self._find_max_time_step()
+        self.loop_size = self._find_loop_size()
+        self.time_steps = []
+        self._process_time_steps()
 
     def _to_named_model(self) -> dict[str, bool]:
         if not self.raw_model:
@@ -223,29 +229,120 @@ class ModelInterpreter:
                 if t > max_t:
                     max_t = t
         return max_t
+    
+    def _find_loop_size(self) -> int:
+        """Find loop size from the model using loopSize_{k} variables"""
+        loop_size_pattern = re.compile(r"^loopSize_(\d+)$")
+        
+        for var_name, truth_value in self.named_model.items():
+            match = loop_size_pattern.match(var_name)
+            if match and truth_value:
+                return int(match.group(1))
+        return 0  # Default if not found
+    
+    def _process_time_steps(self):
+        """Process all time steps and store them for analysis"""
+        for t_idx in range(self.max_time_step + 1):
+            self.time_steps.append(TimeStep(t_idx, self.named_model, self.mra_problem))
+    
+    def calculate_payoff(self) -> float:
+        """
+        Calculate the payoff based on goal satisfaction divided by loop size.
+        Returns the payoff as a float value.
+        """
+        if self.loop_size <= 0:
+            return 0.0
+        
+        # Count how many times agents reach their goal across all time steps
+        goal_count = 0
+        for time_step in self.time_steps:
+            goal_count += len(time_step.satisfied_agents)
+        
+        return goal_count / self.loop_size if self.loop_size > 0 else 0.0
+
+    def get_goal_satisfaction_summary(self) -> dict:
+        """
+        Get a summary of goal satisfaction per agent and time step.
+        Returns a dictionary mapping agent IDs to lists of time steps where they reach their goal.
+        """
+        summary = defaultdict(list)
+        for t, time_step in enumerate(self.time_steps):
+            for agent_id in time_step.satisfied_agents:
+                summary[agent_id].append(t)
+        return dict(summary)
 
     def format_complete_trace(self) -> str:
         """
-        Formats the entire trace of the system over all time steps.
+        Formats the entire trace of the system over all time steps with improved readability.
         """
-        if self.max_time_step == -1 and not self.named_model: # Handle empty/UNSAT model
-            if self.mra_problem.num_resources() > 0 : # If there are resources, show initial state
-                 # Create a TimeStep for t=0 even if no model vars exist for t=0
-                 # This will show default allocations (all to a0) and initial demands.
+        if self.max_time_step == -1 and not self.named_model:  # Handle empty/UNSAT model
+            if self.mra_problem.num_resources() > 0:  # If there are resources, show initial state
+                # Create a TimeStep for t=0 even if no model vars exist for t=0
                 ts_obj_initial = TimeStep(0, {}, self.mra_problem)
                 return ts_obj_initial.get_formatted_string()
             else:
                 return "No time steps found in model and no resources to display for t=0."
 
-
+        # Calculate payoff for the entire loop
+        payoff = self.calculate_payoff()
+        summary = self.get_goal_satisfaction_summary()
+        
+        # Create a header section with important overview information
+        header = [
+            "╔══════════════════════════════════════════",
+            f"║ Loop Size: {self.loop_size:<30} ",
+            f"║ Payoff: {payoff:.4f} ({sum(len(t) for t in summary.values())} goal states/{self.loop_size} steps)",
+            "╚══════════════════════════════════════════"
+        ]
+        
+        # Add agent satisfaction summary
+        summary_lines = ["", "━━━ Agent Goal Satisfaction Summary ━━━"]
+        for agent_id in sorted(summary.keys()):
+            times = summary[agent_id]
+            agent_obj = next((a for a in self.mra_problem.agt if a.id == agent_id), None)
+            demand = agent_obj.d if agent_obj else "?"
+            
+            summary_lines.append(f"Agent {agent_id} (demand={demand}): Goal reached {len(times)} times")
+            if times:
+                time_groups = self._group_consecutive_numbers(times)
+                time_str = ", ".join([
+                    f"t={g[0]}" if len(g) == 1 else f"t={g[0]}-{g[-1]}" 
+                    for g in time_groups
+                ])
+                summary_lines.append(f"  At time steps: {time_str}")
+        
+        # Build the trace visualization
         trace_parts = []
         for t_idx in range(self.max_time_step + 1):
-            ts_obj = TimeStep(t_idx, self.named_model, self.mra_problem)
+            # Add time step header to visually separate steps
+            if t_idx > 0:
+                trace_parts.append("")
+                trace_parts.append(f"┈┈┈ Time Step {t_idx} ┈┈┈")
+            else:
+                trace_parts.append(f"┈┈┈ Time Step {t_idx} (Initial) ┈┈┈")
+            
+            # Add the formatted time step content
+            ts_obj = self.time_steps[t_idx]
             trace_parts.append(ts_obj.get_formatted_string())
             
-            if t_idx < self.max_time_step:
-                # Add separators between time step blocks
-                trace_parts.append("       |")
-                trace_parts.append("       v")
+        # Combine everything
+        result = "\n".join(header + summary_lines + ["", "━━━ Complete Execution Trace ━━━"] + trace_parts)
+        return result
+    
+    def _group_consecutive_numbers(self, numbers):
+        """Helper method to group consecutive numbers for prettier display"""
+        if not numbers:
+            return []
         
-        return "\n".join(filter(None, trace_parts)) # Filter out potential empty strings if a TimeStep returns ""
+        result = []
+        current_group = [numbers[0]]
+        
+        for i in range(1, len(numbers)):
+            if numbers[i] == numbers[i-1] + 1:
+                current_group.append(numbers[i])
+            else:
+                result.append(current_group)
+                current_group = [numbers[i]]
+                
+        result.append(current_group)
+        return result
