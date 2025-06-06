@@ -82,7 +82,7 @@ def enrich_formula_f_agt_infinity_with_maxbound_soft_clauses(formula: Formula, m
 
     return wcnf
 
-def iterative_optimal_loop_synthesis_parallel(mra: MRA, maxbound: int, num_processes: int | None = None):
+def iterative_optimal_loop_synthesis_parallel(mra: MRA, k_start: int, k_end: int, num_processes: int | None = None):
     best_k_loop = None
     best_payoff = float('inf') 
     best_k_value = -1
@@ -96,10 +96,10 @@ def iterative_optimal_loop_synthesis_parallel(mra: MRA, maxbound: int, num_proce
     os.makedirs(temp_wcnf_dir, exist_ok=True)
 
     tasks_args = []
-    for k_loop_size in range(1, maxbound + 1):
-        tasks_args.append((k_loop_size, mra, maxbound, open_wbo_binary_path, temp_wcnf_dir))
+    for k_loop_size in range(k_start, k_end + 1):
+        tasks_args.append((k_loop_size, mra, k_end, open_wbo_binary_path, temp_wcnf_dir))
 
-    print(f"\nStarting parallel computation for k = 1 to {maxbound} using up to {num_processes or os.cpu_count()} processes.")
+    print(f"\nStarting parallel computation for k = {k_start} to {k_end} using up to {num_processes or os.cpu_count()} processes.")
 
     all_results = []
     # Using multiprocessing Pool
@@ -134,11 +134,11 @@ def iterative_optimal_loop_synthesis_parallel(mra: MRA, maxbound: int, num_proce
         print(f"Best pay-off (cost): {best_payoff}")
         # print(f"Model: {best_k_loop}") # Optionally print the model
     else:
-        print("No optimal loop found within the given maxbound.")
+        print(f"No optimal loop found within the given k range ({k_start} to {k_end}).")
     
     try:
         # Clean up temporary files potentially left by workers if _solve_for_k failed before removal
-        for k_loop_size in range(1, maxbound + 1):
+        for k_loop_size in range(k_start, k_end + 1):
             # This globbing might be too aggressive if PIDs are not unique enough over time or if other files exist.
             # A more robust way would be to track exact filenames created by workers if this becomes an issue.
             # For now, relying on the worker's own cleanup.

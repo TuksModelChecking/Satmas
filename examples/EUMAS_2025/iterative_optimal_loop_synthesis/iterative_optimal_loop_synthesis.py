@@ -28,12 +28,12 @@ def run_iterative_example(yaml_file_path: str):
     defined in a YAML file.
     """
     try:
-        mra, k_maxbound_from_yaml = parse_mra_from_yaml(yaml_file_path)
+        mra, k_start, k_end = parse_mra_from_yaml(yaml_file_path)
     except Exception as e:
         print(f"Error parsing YAML into MRA problem: {e}")
         return
 
-    best_k_value, best_payoff, best_k_loop_model = iterative_optimal_loop_synthesis_parallel(mra, k_maxbound_from_yaml)
+    best_k_value, best_payoff, best_k_loop_model = iterative_optimal_loop_synthesis_parallel(mra, k_start, k_end)
 
     print("\n--- Iterative Algorithm Final Result ---")
     if best_k_loop_model is not None:
@@ -56,7 +56,7 @@ def run_iterative_example(yaml_file_path: str):
                 reconstructed_hard_clauses_formula,
                 mra,
                 best_k_value,
-                k_maxbound_from_yaml
+                k_end
             )
             
             print(f"    PySAT context re-established. Top variable ID in pool: {vpool.top if vpool else 'N/A'}")
@@ -75,17 +75,16 @@ def run_iterative_example(yaml_file_path: str):
         except Exception as e:
             print(f"    Error during model interpretation: {e}")
             print(f"    Raw model: {best_k_loop_model}")
-            # You might want to add more debug info here, like traceback.print_exc()
 
     else:
-        print("  No optimal loop strategy found within the given maxbound.")
+        print("  No optimal loop strategy found within the given k range.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Iterative Optimal Loop Synthesis Example.")
     parser.add_argument(
         "--yaml_file",
         type=str,
-        default=os.path.join(script_dir, "example_1.yml"), # Ensure this example_1.yml exists or provide a valid one
+        default=os.path.join(script_dir, "example_1.yml"),
         help="Path to the YAML file defining the MRA problem."
     )
 

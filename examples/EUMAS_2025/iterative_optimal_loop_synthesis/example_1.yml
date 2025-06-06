@@ -1,4 +1,6 @@
-k: 24
+k:
+  start: 6
+  end: 7
 
 resources:
   - r1

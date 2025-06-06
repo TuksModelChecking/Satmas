@@ -1,4 +1,6 @@
-k: 36
+k:
+  start: 0
+  end: 36
 
 resources:
   - r1

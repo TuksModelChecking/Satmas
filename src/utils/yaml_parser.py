@@ -4,7 +4,7 @@ from typing import Tuple, Dict, Set, List
 from mra.problem import MRA
 from mra.agent import Agent
 
-def parse_mra_from_yaml(file_path: str) -> Tuple[MRA, int]:
+def parse_mra_from_yaml(file_path: str) -> Tuple[MRA, int, int]:
     """
     Parses an MRA problem definition from a YAML file.
 
@@ -12,12 +12,25 @@ def parse_mra_from_yaml(file_path: str) -> Tuple[MRA, int]:
         file_path: Path to the YAML file.
 
     Returns:
-        A tuple containing the MRA object and the time horizon k.
+        A tuple containing the MRA object, the start of time horizon k (inclusive),
+        and the end of time horizon k (inclusive).
     """
     with open(file_path, 'r') as f:
         data = yaml.safe_load(f)
 
-    k_value: int = data['k']
+    # Extract k values (either as a single value or as a range)
+    k_start = k_end = None
+    if 'k' in data:
+        if isinstance(data['k'], int):
+            # If k is a single integer, use it for both start and end
+            k_start = k_end = data['k']
+        elif isinstance(data['k'], dict) and 'start' in data['k'] and 'end' in data['k']:
+            k_start = data['k']['start']
+            k_end = data['k']['end']
+        else:
+            raise ValueError("Invalid 'k' format. Expected integer or dict with 'start' and 'end' keys")
+    else:
+        raise ValueError("Missing required 'k' field in YAML file")
     
     # Process resources: map resource names (e.g., "r1") to integer IDs (e.g., 1)
     resource_name_to_id: Dict[str, int] = {}
@@ -54,4 +67,4 @@ def parse_mra_from_yaml(file_path: str) -> Tuple[MRA, int]:
     
     mra_problem = MRA(agt=agents_list, res=resource_set)
     
-    return mra_problem, k_value
+    return mra_problem, k_start, k_end
