@@ -2,7 +2,10 @@ import re
 from collections import defaultdict
 from math import ceil, log
 from mra.problem import MRA
+from utils.logging_helper import get_logger
 
+# Setup logger
+logger = get_logger("model_interpreter")
 
 class TimeStep:
     """
@@ -196,24 +199,99 @@ class ModelInterpreter:
             vpool: The PySAT VarPool object used for encoding.
             mra_problem: The MRAProblem object containing agent definitions, resource counts, etc.
         """
+        logger.debug("Initializing ModelInterpreter")
         self.raw_model = raw_model if raw_model else []
         self.vpool = vpool
         self.mra_problem = mra_problem
         self.named_model: dict[str, bool] = self._to_named_model()
+        
+        # Debug key variables
+        self._debug_key_variables()
+        
         self.max_time_step = self._find_max_time_step()
         self.loop_size = self._find_loop_size()
+        self.loop_closed_steps = self._find_loop_closed_steps()
         self.time_steps = []
         self._process_time_steps()
+        logger.debug(f"ModelInterpreter initialized: max_time_step={self.max_time_step}, loop_size={self.loop_size}")
+        
+        # Debug the loop structure
+        self._debug_loop_structure()
 
     def _to_named_model(self) -> dict[str, bool]:
         if not self.raw_model:
+            logger.debug("Empty raw model, returning empty named model")
             return {}
         model = {}
         for var_int in self.raw_model:
             obj = self.vpool.obj(abs(var_int))
             if obj is not None:
                  model[obj] = var_int > 0
+        logger.debug(f"Named model created with {len(model)} variables")
         return model
+    
+    def _debug_key_variables(self):
+        """Debug the key variables in the model to understand its structure"""
+        if not self.named_model:
+            logger.debug("No variables to debug (empty model)")
+            return
+            
+        # Find and log only TRUE loopSize variables
+        loop_size_vars = [var for var, value in self.named_model.items() 
+                         if re.match(r'^loopSize_\d+$', var) and value]
+        logger.debug(f"TRUE loopSize variables: {loop_size_vars}")
+        
+        # Find and log only TRUE loopClosed variables
+        loop_closed_vars = [var for var, value in self.named_model.items() 
+                           if re.match(r'^loopClosed_\d+$', var) and value]
+        logger.debug(f"TRUE loopClosed variables: {sorted(loop_closed_vars)}")
+        
+        # Find and log only TRUE agent goal variables
+        goal_vars = [var for var, value in self.named_model.items() 
+                    if re.match(r'^agent\d+_goal_loop\d+_at_t_prime\d+$', var) and value]
+        
+        # Group goal variables by agent for clearer output
+        agent_goals = defaultdict(list)
+        for var in goal_vars:
+            match = re.match(r'^agent(\d+)_goal_loop(\d+)_at_t_prime(\d+)$', var)
+            if match:
+                agent_id = match.group(1)
+                loop_size = match.group(2)
+                t_prime = match.group(3)
+                agent_goals[f"Agent {agent_id}"].append(f"loop={loop_size},t_prime={t_prime}")
+        
+        for agent, goals in agent_goals.items():
+            logger.debug(f"TRUE goal variables for {agent}: {sorted(goals)}")
+        
+        # Log counts of variable patterns for an overview
+        var_patterns = {}
+        true_var_patterns = {}
+        for var, value in self.named_model.items():
+            prefix = var.split('_')[0] if '_' in var else var
+            
+            # Count all variables
+            if prefix not in var_patterns:
+                var_patterns[prefix] = 0
+            var_patterns[prefix] += 1
+            
+            # Count only TRUE variables
+            if value:
+                if prefix not in true_var_patterns:
+                    true_var_patterns[prefix] = 0
+                true_var_patterns[prefix] += 1
+        
+        # Log only the pattern counts, not the full variables
+        logger.debug(f"Total variable pattern counts: {var_patterns}")
+        logger.debug(f"TRUE variable pattern counts: {true_var_patterns}")
+        
+        # Additional helpful debug: count time steps that have resource state data
+        time_steps_with_data = set()
+        for var in self.named_model.keys():
+            match = re.match(r'^t(\d+)r\d+b\d+$', var)
+            if match:
+                time_steps_with_data.add(int(match.group(1)))
+        
+        logger.debug(f"Time steps with resource state data: {sorted(time_steps_with_data)}")
 
     def _find_max_time_step(self) -> int:
         max_t = -1
@@ -228,6 +306,7 @@ class ModelInterpreter:
                 t = int(match.group(1))
                 if t > max_t:
                     max_t = t
+        logger.debug(f"Found maximum time step: {max_t}")
         return max_t
     
     def _find_loop_size(self) -> int:
@@ -237,13 +316,79 @@ class ModelInterpreter:
         for var_name, truth_value in self.named_model.items():
             match = loop_size_pattern.match(var_name)
             if match and truth_value:
-                return int(match.group(1))
+                loop_size = int(match.group(1))
+                logger.debug(f"Found loop size: {loop_size}")
+                return loop_size
+        logger.debug("No loop size found in model, using default 0")
         return 0  # Default if not found
+    
+    def _find_loop_closed_steps(self) -> list[int]:
+        """Find all time steps where loopClosed is true"""
+        loop_closed_pattern = re.compile(r"^loopClosed_(\d+)$")
+        closed_steps = []
+        
+        for var_name, truth_value in self.named_model.items():
+            match = loop_closed_pattern.match(var_name)
+            if match and truth_value:
+                step = int(match.group(1))
+                closed_steps.append(step)
+        
+        closed_steps.sort()
+        logger.debug(f"Found loop closed steps: {closed_steps}")
+        return closed_steps
+    
+    def _debug_loop_structure(self):
+        """Debug the loop structure based on loopClosed and loopSize variables"""
+        # Get information about loop structure
+        loop_begin = 1  # Default value
+        
+        if self.loop_closed_steps:
+            loop_end = self.loop_closed_steps[-1] if self.loop_closed_steps else -1
+            logger.debug(f"Loop ends at step: {loop_end}")
+            
+            # Find the first step where the loop is considered to be closed
+            # This helps in understanding where the loop actually begins
+            first_closed_step = self.loop_closed_steps[0] if self.loop_closed_steps else -1
+            logger.debug(f"First loop closed step: {first_closed_step}")
+            
+            # Check if loopSize matches the expected formula from definition 4.1
+            # loopSize_t is true iff (not loopClosed_{t-1} AND loopClosed_t)
+            if self.loop_size > 0:
+                prev_closed = f"loopClosed_{self.loop_size - 1}" in self.named_model and self.named_model[f"loopClosed_{self.loop_size - 1}"]
+                curr_closed = f"loopClosed_{self.loop_size}" in self.named_model and self.named_model[f"loopClosed_{self.loop_size}"]
+                
+                logger.debug(f"For loopSize={self.loop_size}, checking definition 4.1:")
+                logger.debug(f"  - loopClosed_{self.loop_size-1} is {prev_closed}")
+                logger.debug(f"  - loopClosed_{self.loop_size} is {curr_closed}")
+                logger.debug(f"  - (not prev) AND curr = {(not prev_closed) and curr_closed}")
+        
+        # Find goal satisfaction steps for each agent
+        for agent in self.mra_problem.agt:
+            agent_id = agent.id
+            goal_vars = {var: value for var, value in self.named_model.items() 
+                        if re.match(rf'^agent{agent_id}_goal_loop\d+_at_t_prime\d+$', var) and value}
+                        
+            if goal_vars:
+                logger.debug(f"Agent {agent_id} goal satisfaction variables: {goal_vars}")
+                
+                # Extract loops and t_prime values
+                goal_details = []
+                for var in goal_vars.keys():
+                    match = re.match(rf'^agent{agent_id}_goal_loop(\d+)_at_t_prime(\d+)$', var)
+                    if match:
+                        loop = int(match.group(1))
+                        t_prime = int(match.group(2))
+                        goal_details.append((loop, t_prime))
+                
+                goal_details.sort()
+                logger.debug(f"Agent {agent_id} goal details (loop, t_prime): {goal_details}")
     
     def _process_time_steps(self):
         """Process all time steps and store them for analysis"""
+        logger.debug(f"Processing {self.max_time_step + 1} time steps")
         for t_idx in range(self.max_time_step + 1):
             self.time_steps.append(TimeStep(t_idx, self.named_model, self.mra_problem))
+        logger.debug("Time steps processing complete")
     
     def calculate_payoff(self) -> float:
         """
@@ -251,6 +396,7 @@ class ModelInterpreter:
         Returns the payoff as a float value.
         """
         if self.loop_size <= 0:
+            logger.warning("Cannot calculate payoff - loop size is 0 or negative")
             return 0.0
         
         # Count how many times agents reach their goal across all time steps
@@ -258,7 +404,9 @@ class ModelInterpreter:
         for time_step in self.time_steps:
             goal_count += len(time_step.satisfied_agents)
         
-        return goal_count / self.loop_size if self.loop_size > 0 else 0.0
+        payoff = goal_count / self.loop_size if self.loop_size > 0 else 0.0
+        logger.debug(f"Calculated payoff: {payoff} ({goal_count} goals / {self.loop_size} steps)")
+        return payoff
 
     def get_goal_satisfaction_summary(self) -> dict:
         """
@@ -269,13 +417,18 @@ class ModelInterpreter:
         for t, time_step in enumerate(self.time_steps):
             for agent_id in time_step.satisfied_agents:
                 summary[agent_id].append(t)
+        
+        logger.debug(f"Goal satisfaction summary: {dict(summary)}")
         return dict(summary)
 
     def format_complete_trace(self) -> str:
         """
         Formats the entire trace of the system over all time steps with improved readability.
         """
+        logger.debug("Formatting complete trace")
+        
         if self.max_time_step == -1 and not self.named_model:  # Handle empty/UNSAT model
+            logger.warning("Empty/UNSAT model detected")
             if self.mra_problem.num_resources() > 0:  # If there are resources, show initial state
                 # Create a TimeStep for t=0 even if no model vars exist for t=0
                 ts_obj_initial = TimeStep(0, {}, self.mra_problem)
@@ -289,10 +442,10 @@ class ModelInterpreter:
         
         # Create a header section with important overview information
         header = [
-            "╔══════════════════════════════════════════",
-            f"║ Loop Size: {self.loop_size:<30} ",
-            f"║ Payoff: {payoff:.4f} ({sum(len(t) for t in summary.values())} goal states/{self.loop_size} steps)",
-            "╚══════════════════════════════════════════"
+            "╔════════════════════════════════════════════╗",
+            f"║ Loop Size: {self.loop_size:<32} ║",
+            f"║ Payoff: {payoff:.4f} ({sum(len(t) for t in summary.values())} goal states/{self.loop_size} steps) ║",
+            "╚════════════════════════════════════════════╝"
         ]
         
         # Add agent satisfaction summary
@@ -313,20 +466,32 @@ class ModelInterpreter:
         
         # Build the trace visualization
         trace_parts = []
+        
+        # Determine loop structure for display
+        loop_start = 0
+
         for t_idx in range(self.max_time_step + 1):
             # Add time step header to visually separate steps
             if t_idx > 0:
                 trace_parts.append("")
-                trace_parts.append(f"┈┈┈ Time Step {t_idx} ┈┈┈")
+            
+            # Mark special time steps
+            elif t_idx == loop_start:
+                trace_parts.append(f"┏━━━ Time Step {t_idx} (Loop Start) ━━━┓") 
+            elif t_idx == self.max_time_step and t_idx > 1:
+                trace_parts.append(f"┗━━━ Time Step {t_idx} (Loop End) ━━━┛")
             else:
-                trace_parts.append(f"┈┈┈ Time Step {t_idx} (Initial) ┈┈┈")
+                is_closed_step = t_idx in self.loop_closed_steps
+                status = " (Loop Closed)" if is_closed_step else ""
+                trace_parts.append(f"┈┈┈ Time Step {t_idx}{status} ┈┈┈")
             
             # Add the formatted time step content
             ts_obj = self.time_steps[t_idx]
             trace_parts.append(ts_obj.get_formatted_string())
-            
+        
         # Combine everything
         result = "\n".join(header + summary_lines + ["", "━━━ Complete Execution Trace ━━━"] + trace_parts)
+        logger.debug("Trace formatting complete")
         return result
     
     def _group_consecutive_numbers(self, numbers):

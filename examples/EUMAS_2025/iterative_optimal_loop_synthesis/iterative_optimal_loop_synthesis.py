@@ -1,6 +1,7 @@
 import sys
 import os
 import argparse
+import logging
 
 # --- Path Setup ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -13,6 +14,7 @@ from utils.yaml_parser import parse_mra_from_yaml
 from algorithms.EUMAS_2025.implemenation_guide.algorithm_1 import iterative_optimal_loop_synthesis_parallel
 from core.model_interpreter import ModelInterpreter
 from core.pysat_constructs import vpool
+from utils.logging_helper import get_logger, set_log_level
 
 # --- Imports for Re-establishing PySAT Context ---
 from pysat.formula import Formula, And
@@ -21,29 +23,39 @@ from core.pysat_constructs import Atom
 from algorithms.EUMAS_2025.implemenation_guide.algorithm_1 import enrich_formula_f_agt_infinity_with_maxbound_soft_clauses
 from encoding.EUMAS_2025.implementation_guide.definition_1 import encode_formula_f_agt_infinity_hard_clauses
 
+# Setup logger
+logger = get_logger("iterative_example")
 
-def run_iterative_example(yaml_file_path: str):
+def run_iterative_example(yaml_file_path: str, verbose: bool = False):
     """
     Runs the iterative optimal loop synthesis algorithm on an MRA problem
     defined in a YAML file.
     """
+    # Set appropriate log level
+    log_level = logging.DEBUG if verbose else logging.INFO
+    set_log_level(log_level)
+    
     try:
         mra, k_start, k_end = parse_mra_from_yaml(yaml_file_path)
+        logger.info(f"Parsed MRA problem from {yaml_file_path}")
+        logger.info(f"Using k range: {k_start} to {k_end}")
     except Exception as e:
-        print(f"Error parsing YAML into MRA problem: {e}")
+        logger.error(f"Error parsing YAML into MRA problem: {e}")
         return
 
-    best_k_value, best_payoff, best_k_loop_model = iterative_optimal_loop_synthesis_parallel(mra, k_start, k_end)
+    best_k_value, best_payoff, best_k_loop_model = iterative_optimal_loop_synthesis_parallel(
+        mra, k_start, k_end, log_level=log_level
+    )
 
-    print("\n--- Iterative Algorithm Final Result ---")
+    logger.info("\n--- Iterative Algorithm Final Result ---")
     if best_k_loop_model is not None:
-        print(f"  Optimal loop strategy found!")
-        print(f"  Best k (loop size): {best_k_value}")
-        print(f"  Best pay-off (cost): {best_payoff}")
+        logger.info(f"Optimal loop strategy found!")
+        logger.info(f"Best k (loop size): {best_k_value}")
+        logger.info(f"Best pay-off (cost): {best_payoff}")
 
-        print("\n  --- Preparing for Model Interpretation ---")
+        logger.info("\n--- Preparing for Model Interpretation ---")
         try:
-            print(f"    Re-establishing PySAT context for k={best_k_value}...")
+            logger.debug(f"Re-establishing PySAT context for k={best_k_value}...")
             Formula.cleanup()
             vpool.restart()
 
@@ -59,9 +71,9 @@ def run_iterative_example(yaml_file_path: str):
                 k_end
             )
             
-            print(f"    PySAT context re-established. Top variable ID in pool: {vpool.top if vpool else 'N/A'}")
+            logger.debug(f"PySAT context re-established. Top variable ID in pool: {vpool.top if vpool else 'N/A'}")
 
-            print("\n  --- Interpreted Model Trace ---")
+            logger.info("\n--- Interpreted Model Trace ---")
             interpreter = ModelInterpreter(
                 raw_model=best_k_loop_model,
                 vpool=vpool,
@@ -69,15 +81,15 @@ def run_iterative_example(yaml_file_path: str):
             )
             formatted_trace = interpreter.format_complete_trace()
             
-            for line in formatted_trace.splitlines():
-                print(f"    {line}")
+            # Print the trace directly, not through logger to preserve formatting
+            print(formatted_trace)
 
         except Exception as e:
-            print(f"    Error during model interpretation: {e}")
-            print(f"    Raw model: {best_k_loop_model}")
+            logger.error(f"Error during model interpretation: {e}")
+            logger.debug(f"Raw model: {best_k_loop_model}")
 
     else:
-        print("  No optimal loop strategy found within the given k range.")
+        logger.warning("No optimal loop strategy found within the given k range.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Iterative Optimal Loop Synthesis Example.")
@@ -87,11 +99,16 @@ if __name__ == "__main__":
         default=os.path.join(script_dir, "example_1.yml"),
         help="Path to the YAML file defining the MRA problem."
     )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Enable verbose (debug) logging"
+    )
 
     args = parser.parse_args()
 
     if not os.path.exists(args.yaml_file):
-        print(f"Error: YAML file not found at {args.yaml_file}")
+        logger.error(f"YAML file not found at {args.yaml_file}")
         sys.exit(1)
         
-    run_iterative_example(args.yaml_file)
+    run_iterative_example(args.yaml_file, args.verbose)
